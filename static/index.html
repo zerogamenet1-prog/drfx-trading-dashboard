@@ -26,6 +26,7 @@
       --red: #f43f5e;
       --red-glow: rgba(244, 63, 94, 0.2);
       --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.2);
       --purple: #8b5cf6;
       --font-mono: 'JetBrains Mono', monospace;
       --font-sans: 'Sarabun', 'Inter', -apple-system, sans-serif;
@@ -41,19 +42,34 @@
       flex-direction: column;
       overflow-x: hidden;
       background-image: 
-        radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 15% 15%, var(--accent-glow) 0%, transparent 40%),
         radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.03) 0%, transparent 40%);
     }
 
-    /* PRIVACY MODE */
     body.privacy-mode .private-val {
       filter: blur(8px);
       user-select: none;
     }
 
+    /* ANNOUNCEMENT BANNER */
+    .announce-bar {
+      background: linear-gradient(90deg, #1e1b4b 0%, #091222 50%, #1e1b4b 100%);
+      border-bottom: 1px solid var(--amber);
+      color: #fde68a;
+      padding: 8px 24px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+    }
+    .announce-bar.active { display: flex; }
+
     /* HEADER */
     header {
-      background: rgba(9, 18, 34, 0.85);
+      background: rgba(9, 18, 34, 0.88);
       border-bottom: 1px solid var(--border);
       padding: 12px 24px;
       display: flex;
@@ -74,7 +90,7 @@
     .brand-icon {
       width: 42px;
       height: 42px;
-      background: linear-gradient(135deg, #0ea5e9, #00f0ff);
+      background: linear-gradient(135deg, #0ea5e9, var(--accent));
       border-radius: 12px;
       display: flex;
       align-items: center;
@@ -83,7 +99,7 @@
       box-shadow: 0 0 20px var(--accent-glow);
     }
     .brand-title {
-      font-size: 1.25rem;
+      font-size: 1.22rem;
       font-weight: 800;
       letter-spacing: 0.5px;
       display: flex;
@@ -91,7 +107,7 @@
       gap: 8px;
     }
     .brand-title span { 
-      background: linear-gradient(90deg, #00f0ff, #38bdf8);
+      background: linear-gradient(90deg, var(--accent), #38bdf8);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -191,10 +207,15 @@
       background: var(--bg3);
       color: var(--accent);
     }
-    .btn-tool.active-tool {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(0, 240, 255, 0.08);
+    .btn-admin {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05));
+      border: 1px solid var(--amber);
+      color: var(--amber);
+    }
+    .btn-admin:hover {
+      background: var(--amber);
+      color: #030a16;
+      box-shadow: 0 0 15px var(--amber-glow);
     }
 
     /* NAVIGATION TABS BAR */
@@ -221,9 +242,7 @@
       white-space: nowrap;
       transition: all 0.2s;
     }
-    .tab-btn:hover {
-      color: var(--text);
-    }
+    .tab-btn:hover { color: var(--text); }
     .tab-btn.active {
       color: var(--accent);
       border-bottom-color: var(--accent);
@@ -296,9 +315,7 @@
       gap: 20px;
       animation: fadeIn 0.2s ease;
     }
-    .tab-content.active {
-      display: flex;
-    }
+    .tab-content.active { display: flex; }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
@@ -350,7 +367,7 @@
     }
     .acard:hover {
       border-color: var(--border-bright);
-      box-shadow: 0 8px 30px rgba(0, 240, 255, 0.08);
+      box-shadow: 0 8px 30px var(--accent-glow);
     }
     .acard-header {
       display: flex;
@@ -363,14 +380,20 @@
       font-size: 1.05rem;
       font-weight: 700;
       color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
     .acard-meta {
       font-size: 0.75rem;
       color: var(--muted);
-      margin-top: 3px;
+      margin-top: 4px;
       font-family: var(--font-mono);
       display: flex;
       gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
     }
     .broker-tag {
       background: var(--bg3);
@@ -378,6 +401,34 @@
       padding: 1px 6px;
       border-radius: 4px;
     }
+    .badge-cent {
+      background: var(--amber-glow);
+      color: var(--amber);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.7rem;
+    }
+    .badge-usd {
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.7rem;
+    }
+    .badge-custom {
+      background: rgba(139, 92, 246, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
     .stat-row {
       display: flex;
       justify-content: space-between;
@@ -393,6 +444,13 @@
       font-size: 0.92rem;
       font-weight: 600;
     }
+    .cent-subval {
+      font-size: 0.72rem;
+      color: var(--amber);
+      font-family: var(--font-mono);
+      display: block;
+      text-align: right;
+    }
     .progress-bar-bg {
       height: 6px;
       background: var(--bg3);
@@ -404,6 +462,12 @@
       height: 100%;
       background: linear-gradient(90deg, #0284c7, var(--green));
       border-radius: 3px;
+    }
+    .acard-btns {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+      flex-wrap: wrap;
     }
     .btn-detail {
       background: var(--bg3);
@@ -419,13 +483,30 @@
       justify-content: center;
       gap: 6px;
       transition: all 0.2s;
-      width: 100%;
-      margin-top: auto;
+      flex: 1;
     }
     .btn-detail:hover {
       background: var(--accent);
       color: #030a16;
       font-weight: 700;
+    }
+    .btn-link {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: var(--green);
+      font-weight: 600;
+      font-size: 0.78rem;
+      padding: 9px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .btn-link:hover {
+      background: var(--green);
+      color: #030a16;
     }
 
     /* TABLE */
@@ -523,15 +604,14 @@
       text-align: right;
     }
 
-    /* SEARCH BAR */
+    /* SEARCH BAR & INPUTS */
     .search-box {
       background: var(--bg3);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 6px 12px;
       color: var(--text);
-      font-size: 0.8rem;
-      width: 220px;
+      font-size: 0.82rem;
     }
     .search-box:focus {
       outline: none;
@@ -542,7 +622,7 @@
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.82);
       backdrop-filter: blur(8px);
       z-index: 100;
       display: none;
@@ -587,6 +667,38 @@
     }
     .modal-close:hover { color: var(--red); }
 
+    /* ADMIN FORM STYLES */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .form-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .form-input {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: 0.86rem;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .admin-account-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
     /* FOOTER */
     footer {
       border-top: 1px solid var(--border);
@@ -604,13 +716,19 @@
 </head>
 <body>
 
+  <!-- ANNOUNCEMENT BANNER -->
+  <div class="announce-bar" id="announcementBar">
+    <span style="font-size: 1.1rem;">📢</span>
+    <span id="announcementText">ประกาศสำคัญ</span>
+  </div>
+
   <!-- HEADER -->
   <header>
     <div class="brand">
       <div class="brand-icon">🧬</div>
       <div>
-        <div class="brand-title">NEXUS <span>QUANT</span> <span class="brand-badge">PRO v2.0</span></div>
-        <div class="brand-sub">Next-Gen Algorithmic Trading Intelligence</div>
+        <div class="brand-title"><span id="siteTitle">NEXUS QUANT</span> <span class="brand-badge">PRO v2.0</span></div>
+        <div class="brand-sub" id="siteSubtitle">Next-Gen Algorithmic Trading Intelligence</div>
       </div>
     </div>
 
@@ -643,9 +761,9 @@
         📥 Export
       </button>
 
-      <!-- Demo Data Injection -->
-      <button class="btn-tool" style="border-color: var(--accent); color: var(--accent);" onclick="loadDemoData()">
-        ⚡ Demo Data
+      <!-- Admin Panel Button -->
+      <button class="btn-tool btn-admin" onclick="openAdminModal()">
+        ⚙️ Admin หลังบ้าน
       </button>
     </div>
   </header>
@@ -656,7 +774,10 @@
       📊 Portfolio Overview
     </button>
     <button class="tab-btn" onclick="switchTab('tabPositions')">
-      ⚡ Live Market Positions <span class="badge-count" id="tabPosBadge">0</span>
+      ⚡ Live Order Book <span class="badge-count" id="tabPosBadge">0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tabHistory')">
+      📜 Trade History (Closed Deals)
     </button>
     <button class="tab-btn" onclick="switchTab('tabAnalytics')">
       📈 Performance Analytics
@@ -665,7 +786,7 @@
       📅 Profit Calendar Heatmap
     </button>
     <button class="tab-btn" onclick="switchTab('tabWebhook')">
-      ⚙️ Connection & Webhook Guide
+      ⚙️ Connection Guide
     </button>
   </div>
 
@@ -676,7 +797,7 @@
       <div class="scard">
         <div class="scard-title">Total Portfolio Balance <span>💰</span></div>
         <div class="scard-val c-accent private-val" id="totalBalance">$0.00</div>
-        <div class="scard-sub" id="totalBalanceSub">0 Accounts Connected</div>
+        <div class="scard-sub" id="totalBalanceSub">0 Accounts Active</div>
       </div>
       <div class="scard">
         <div class="scard-title">Total Equity (NAV) <span>💎</span></div>
@@ -686,17 +807,17 @@
       <div class="scard">
         <div class="scard-title">Live Floating P/L <span>📊</span></div>
         <div class="scard-val private-val" id="totalFloating">$0.00</div>
-        <div class="scard-sub" id="floatingPercent">0.00% of Balance</div>
+        <div class="scard-sub" id="floatingPercent">0.00% ROI</div>
       </div>
       <div class="scard">
         <div class="scard-title">Today's Profit <span>🚀</span></div>
         <div class="scard-val private-val" id="todayProfit">$0.00</div>
-        <div class="scard-sub" id="todayProfitSub">Daily Closed P/L</div>
+        <div class="scard-sub">Daily Closed P/L</div>
       </div>
       <div class="scard">
         <div class="scard-title">Yesterday Profit <span>📅</span></div>
         <div class="scard-val private-val" id="yesterdayProfit">$0.00</div>
-        <div class="scard-sub">Previous Trading Day</div>
+        <div class="scard-sub">Previous Day</div>
       </div>
       <div class="scard">
         <div class="scard-title">Weekly Profit <span>📈</span></div>
@@ -750,14 +871,72 @@
               <th>Comment / Magic</th>
             </tr>
           </thead>
-          <tbody id="allPositionsTableBody">
-            <tr><td colspan="10" style="text-align:center; color:var(--dim); padding:24px;">ไม่มีออเดอร์ค้างอยู่ในตลาด</td></tr>
+          <tbody id="allPositionsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: TRADE HISTORY (CLOSED DEALS) -->
+    <div class="tab-content" id="tabHistory">
+      <!-- Performance Banner -->
+      <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
+        <div class="scard">
+          <div class="scard-title">Total Trades <span>🎯</span></div>
+          <div class="scard-val" id="histTotalTrades">0</div>
+          <div class="scard-sub" id="histWinLoss">0 Win / 0 Loss</div>
+        </div>
+        <div class="scard">
+          <div class="scard-title">Win Rate <span>🏆</span></div>
+          <div class="scard-val c-green" id="histWinRate">0.0%</div>
+          <div class="scard-sub">Overall Accuracy</div>
+        </div>
+        <div class="scard">
+          <div class="scard-title">Profit Factor <span>⚖️</span></div>
+          <div class="scard-val c-accent" id="histProfitFactor">0.00</div>
+          <div class="scard-sub">Gross Win / Gross Loss</div>
+        </div>
+        <div class="scard">
+          <div class="scard-title">Net Realized Profit <span>💵</span></div>
+          <div class="scard-val private-val" id="histNetProfit">$0.00</div>
+          <div class="scard-sub">All-time Closed Deals</div>
+        </div>
+        <div class="scard">
+          <div class="scard-title">Best / Worst Trade <span>📊</span></div>
+          <div class="scard-val private-val" style="font-size: 1.1rem;" id="histBestWorst">$0 / $0</div>
+          <div class="scard-sub">Max Single Win vs Loss</div>
+        </div>
+      </div>
+
+      <div class="section-header" style="margin-top: 10px;">
+        <div class="section-title">
+          <span>📜 ประวัติการเทรดที่ปิดแล้วล่าสุด (Recent Closed Deals)</span>
+        </div>
+        <button class="btn-tool" onclick="loadTradeHistory()">🔄 รีเฟรชประวัติ</button>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>Close Time</th>
+              <th>Symbol</th>
+              <th>Type</th>
+              <th>Lots</th>
+              <th>Open Price</th>
+              <th>Close Price</th>
+              <th>Net Profit</th>
+              <th>Comment</th>
+            </tr>
+          </thead>
+          <tbody id="tradeHistoryTableBody">
+            <tr><td colspan="9" style="text-align:center; color:var(--dim); padding:24px;">กำลังโหลดประวัติการเทรด...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- TAB 3: PERFORMANCE ANALYTICS -->
+    <!-- TAB 4: PERFORMANCE ANALYTICS -->
     <div class="tab-content" id="tabAnalytics">
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
         <div class="scard" style="min-height: 380px;">
@@ -779,7 +958,7 @@
       </div>
     </div>
 
-    <!-- TAB 4: PROFIT CALENDAR HEATMAP -->
+    <!-- TAB 5: PROFIT CALENDAR HEATMAP -->
     <div class="tab-content" id="tabCalendar">
       <div class="section-header">
         <div class="section-title">
@@ -790,42 +969,131 @@
         </div>
       </div>
       <div class="scard">
-        <div class="cal-grid" id="calendarGrid">
-          <!-- Calendar Days -->
-        </div>
+        <div class="cal-grid" id="calendarGrid"></div>
       </div>
     </div>
 
-    <!-- TAB 5: WEBHOOK & CONNECTION GUIDE -->
+    <!-- TAB 6: CONNECTION GUIDE -->
     <div class="tab-content" id="tabWebhook">
       <div class="scard" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;">
         <div class="section-title">
-          <span>⚙️ วิธีตั้งค่า MT5 เชื่อมต่อกับ NEXUS QUANT PRO</span>
+          <span>⚙️ วิธีตั้งค่า MT5 เชื่อมต่อกับแดชบอร์ด</span>
         </div>
         <p style="font-size: 0.88rem; color: var(--muted); line-height: 1.6;">
-          คุณสามารถนำไฟล์ EA <b>DRFX_WebReporter.ex5</b> (หรือ Nexus Reporter) ไปแนบที่กราฟใน MT5 เครื่องใดก็ได้ในโลก เพื่อให้ส่งข้อมูลมายังแดชบอร์ดนี้แบบ Real-time
+          คุณสามารถนำไฟล์ EA <b>DRFX_WebReporter.ex5</b> ไปแนบที่กราฟใน MT5 เพื่อส่งข้อมูลมายังแดชบอร์ดนี้ได้ตลอด 24 ชั่วโมง
         </p>
 
         <div>
           <label style="font-size: 0.8rem; color: var(--muted); font-weight: 600; display: block; margin-bottom: 6px;">
-            1. URL สำหรับใส่ในช่อง WebRequest ของ MT5:
+            URL สำหรับใส่ในช่อง WebRequest ของ MT5:
           </label>
           <div style="display: flex; gap: 8px;">
             <input type="text" id="webhookUrlInput" class="search-box" style="flex: 1; font-family: var(--font-mono);" readonly>
             <button class="btn-tool" onclick="copyWebhookUrl()">📋 Copy URL</button>
           </div>
         </div>
-
-        <div style="background: var(--bg3); padding: 14px; border-radius: 8px; font-size: 0.84rem; line-height: 1.6; border: 1px solid var(--border);">
-          <b>ขั้นตอนการตั้งค่าใน MT5:</b><br>
-          1. ไปที่เมนู <b>Tools -> Options -> Expert Advisors</b> (กด Ctrl+O)<br>
-          2. ติ๊กถูกที่ <b>Allow WebRequest for listed URL</b><br>
-          3. กดเพิ่ม URL: <code style="color: var(--accent);" id="webhookHostCode"></code><br>
-          4. ลาก EA <b>DRFX_WebReporter</b> ลงบนกราฟคู่เงินใดก็ได้ 1 กราฟ แล้วกด OK!
-        </div>
       </div>
     </div>
   </main>
+
+  <!-- MODAL: ADMIN BACKOFFICE PANEL -->
+  <div class="modal-overlay" id="adminModal">
+    <div class="modal-box" style="max-width: 850px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.3rem;">⚙️</span>
+          <div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: var(--amber);">NEXUS Admin Backoffice</div>
+            <div style="font-size: 0.72rem; color: var(--muted);">แผงควบคุมและปรับแต่งการแสดงผลหลังบ้าน</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeAdminModal()">&times;</button>
+      </div>
+
+      <div class="modal-body" id="adminModalBody">
+        <!-- LOGIN VIEW (IF NOT AUTHED) -->
+        <div id="adminLoginView" style="max-width: 400px; margin: 30px auto; text-align: center;">
+          <div style="font-size: 2.5rem; margin-bottom: 12px;">🔒</div>
+          <h3 style="margin-bottom: 8px;">เข้าสู่ระบบ Admin</h3>
+          <p style="font-size: 0.82rem; color: var(--muted); margin-bottom: 20px;">กรอกรหัสผ่านเพื่อเข้าใช้งานระบบจัดการหลังบ้าน (รหัสเริ่มต้น: <b>admin1234</b>)</p>
+          <div class="form-group">
+            <input type="password" id="adminPasswordInput" class="form-input" placeholder="กรอกรหัสผ่าน..." style="text-align: center;">
+          </div>
+          <button class="btn-detail" style="background: var(--amber); color: #030a16; font-weight: 700; padding: 10px;" onclick="submitAdminLogin()">
+            🔓 ล็อกอินเข้าสู่ระบบ
+          </button>
+          <div id="adminLoginErr" style="color: var(--red); font-size: 0.8rem; margin-top: 10px; display: none;">รหัสผ่านไม่ถูกต้อง</div>
+        </div>
+
+        <!-- DASHBOARD VIEW (WHEN AUTHED) -->
+        <div id="adminDashboardView" style="display: none; flex-direction: column; gap: 20px;">
+          <div class="btn-group" style="align-self: flex-start;">
+            <button id="btnAdminTabAcc" class="active" onclick="switchAdminTab('acc')">🎛️ จัดการรายพอร์ต</button>
+            <button id="btnAdminTabGlobal" onclick="switchAdminTab('global')">🌐 ตั้งค่าระบบส่วนกลาง</button>
+          </div>
+
+          <!-- SUBTAB A: ACCOUNT SETTINGS -->
+          <div id="adminSubtabAcc" style="display: flex; flex-direction: column; gap: 14px;">
+            <p style="font-size: 0.82rem; color: var(--muted);">
+              💡 <b>สำคัญ:</b> คุณสามารถปรับแก้หน่วยเงินของพอร์ต (CENT / USD), เปลี่ยนชื่อพอร์ต, ใส่ป้ายกำกับ, หรือซ่อนพอร์ตได้ที่นี่
+            </p>
+            <div id="adminAccountsList"></div>
+          </div>
+
+          <!-- SUBTAB B: GLOBAL SETTINGS -->
+          <div id="adminSubtabGlobal" style="display: none; flex-direction: column; gap: 14px;">
+            <div class="scard" style="padding: 16px;">
+              <h4 style="margin-bottom: 12px; color: var(--accent);">🌐 ข้อมูลส่วนหัวและหน้าเว็บ</h4>
+              <div class="form-group">
+                <label class="form-label">ชื่อหัวเว็บ (Site Title):</label>
+                <input type="text" id="cfgSiteTitle" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">คำบรรยายหัวเว็บ (Subtitle):</label>
+                <input type="text" id="cfgSiteSubtitle" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">อัตราแลกเปลี่ยน USD / THB (บาท):</label>
+                <input type="number" step="0.05" id="cfgUsdThb" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">แถบข้อความประกาศวิ่งหัวเว็บ (Announcement):</label>
+                <input type="text" id="cfgAnnouncement" class="form-input" placeholder="เช่น 🔥 อัปเดต EA V15 กำไรทะลุเป้า...">
+              </div>
+            </div>
+
+            <div class="scard" style="padding: 16px;">
+              <h4 style="margin-bottom: 12px; color: var(--accent);">📞 ช่องทางการติดต่อ (Contact Links)</h4>
+              <div class="form-group">
+                <label class="form-label">LINE Official / OpenChat:</label>
+                <input type="text" id="cfgContactLine" class="form-input" placeholder="@Drfx">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Telegram Channel / User:</label>
+                <input type="text" id="cfgContactTelegram" class="form-input" placeholder="@drfx_algo">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Facebook Page / Link:</label>
+                <input type="text" id="cfgContactFb" class="form-input" placeholder="drfxtrading">
+              </div>
+            </div>
+
+            <div class="scard" style="padding: 16px;">
+              <h4 style="margin-bottom: 12px; color: var(--red);">🔒 เปลี่ยนรหัสผ่าน Admin</h4>
+              <div class="form-group">
+                <label class="form-label">รหัสผ่านใหม่ (หากไม่ต้องการเปลี่ยนให้เว้นว่างไว้):</label>
+                <input type="password" id="cfgNewPassword" class="form-input" placeholder="กรอกรหัสผ่านใหม่...">
+              </div>
+            </div>
+
+            <button class="btn-detail" style="background: var(--amber); color: #030a16; font-weight: 700; padding: 12px;" onclick="saveGlobalSettings()">
+              💾 บันทึกการตั้งค่าระบบส่วนกลาง
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: ACCOUNT DEEP VIEW -->
   <div class="modal-overlay" id="detailModal">
@@ -880,7 +1148,7 @@
 
   <!-- FOOTER -->
   <footer>
-    <div>NEXUS QUANT PRO · High-Frequency Algorithmic Ecosystem · Enterprise Multi-Port Analytics</div>
+    <div id="footerBrand">NEXUS QUANT PRO · High-Frequency Algorithmic Ecosystem · Enterprise Multi-Port Analytics</div>
     <div id="footerClock" style="font-family: var(--font-mono);">Time: --:--:--</div>
   </footer>
 
@@ -891,6 +1159,7 @@
     let latestData = null;
     let isPrivacyMode = false;
     let isSoundEnabled = true;
+    let isAdminAuthed = false;
     let audioCtx = null;
 
     let mainGrowthChartInstance = null;
@@ -898,7 +1167,6 @@
     let modalGrowthChartInstance = null;
     let modalDailyChartInstance = null;
 
-    // Web Audio Chime Synthesizer
     function playChime(success = true) {
       if (!isSoundEnabled) return;
       try {
@@ -910,8 +1178,8 @@
         osc.type = 'sine';
         const now = audioCtx.currentTime;
         if (success) {
-          osc.frequency.setValueAtTime(587.33, now); // D5
-          osc.frequency.setValueAtTime(880, now + 0.08); // A5
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.setValueAtTime(880, now + 0.08);
           gain.gain.setValueAtTime(0.08, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
           osc.start(now);
@@ -920,14 +1188,12 @@
       } catch (e) {}
     }
 
-    // Privacy Toggle
     function togglePrivacy() {
       isPrivacyMode = !isPrivacyMode;
       document.body.classList.toggle('privacy-mode', isPrivacyMode);
       document.getElementById('privacyIcon').innerText = isPrivacyMode ? '🙈' : '👁️';
     }
 
-    // Sound Toggle
     function toggleSound() {
       isSoundEnabled = !isSoundEnabled;
       document.getElementById('soundIcon').innerText = isSoundEnabled ? '🔊' : '🔇';
@@ -935,15 +1201,15 @@
       if (isSoundEnabled) playChime(true);
     }
 
-    // Format Currency
-    function fmt(val, forceCurrency = null) {
+    // Smart Currency Formatter (USD / Cent / THB)
+    function fmt(val, forceCurrency = null, isAccountCent = false) {
       if (val === undefined || val === null || isNaN(val)) return '$0.00';
       const c = forceCurrency || currentCurrency;
       if (c === 'THB') {
         const thb = val * usdThbRate;
         return '฿' + thb.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       } else if (c === 'CENT') {
-        const cent = val * 100;
+        const cent = isAccountCent ? (val * 100) : (val * 100);
         return cent.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' ¢';
       } else {
         return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -958,7 +1224,6 @@
       if (latestData) renderDashboard(latestData);
     }
 
-    // Tab Switching
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -969,12 +1234,10 @@
       const targetContent = document.getElementById(tabId);
       if (targetContent) targetContent.classList.add('active');
 
-      if (tabId === 'tabAnalytics' && latestData) {
-        renderAnalyticsCharts();
-      }
+      if (tabId === 'tabHistory') loadTradeHistory();
+      if (tabId === 'tabAnalytics' && latestData) renderAnalyticsCharts();
     }
 
-    // WebSocket
     function connectWS() {
       const proto = location.protocol === 'https:' ? 'wss' : 'ws';
       const wsUrl = `${proto}://${location.host}/ws`;
@@ -1003,16 +1266,32 @@
       ws.onerror = () => ws.close();
     }
 
-    // Render Dashboard
     function renderDashboard(data) {
       if (!data || !data.portfolio) return;
       const p = data.portfolio;
+      const cfg = data.config || {};
+
       if (data.usdthb && data.usdthb.rate) usdThbRate = data.usdthb.rate;
 
-      // Update Webhook URL box
+      // Config Title & Announcement
+      if (cfg.site_title) {
+        document.getElementById('siteTitle').innerText = cfg.site_title;
+        document.title = `${cfg.site_title} · Next-Gen Trading Intelligence`;
+      }
+      if (cfg.site_subtitle) document.getElementById('siteSubtitle').innerText = cfg.site_subtitle;
+      
+      const bar = document.getElementById('announcementBar');
+      if (cfg.announcement && cfg.announcement.trim()) {
+        document.getElementById('announcementText').innerText = cfg.announcement;
+        bar.className = 'announce-bar active';
+      } else {
+        bar.className = 'announce-bar';
+      }
+
+      // Webhook URL input
       const origin = location.origin;
-      document.getElementById('webhookUrlInput').value = `${origin}/api/report`;
-      document.getElementById('webhookHostCode').innerText = origin;
+      const whInput = document.getElementById('webhookUrlInput');
+      if (whInput) whInput.value = `${origin}/api/report`;
 
       // Summary KPIs
       document.getElementById('totalBalance').innerText = fmt(p.total_balance);
@@ -1046,17 +1325,19 @@
       renderAccountsGrid(p.accounts || []);
       renderAllPositionsTable(p.all_positions || []);
       renderCalendar(p.daily_calendar || []);
+
+      if (p.performance_stats) {
+        renderHistoryStats(p.performance_stats);
+      }
     }
 
-    // Render Accounts Grid
     function renderAccountsGrid(accounts) {
       const grid = document.getElementById('accountsGrid');
       if (accounts.length === 0) {
         grid.innerHTML = `
           <div style="grid-column: 1/-1; text-align: center; padding: 50px 20px; background: var(--bg2); border: 1px dashed var(--border); border-radius: 14px;">
             <h3>ยังไม่มีบอทเชื่อมต่อเข้ามา</h3>
-            <p style="color:var(--muted); margin: 10px 0 16px;">กดปุ่ม ⚡ Demo Data ด้านบนขวาเพื่อทดสอบดูการแสดงผลทันที</p>
-            <button class="btn-tool" style="border-color:var(--accent); color:var(--accent);" onclick="loadDemoData()">⚡ Load Demo</button>
+            <p style="color:var(--muted); margin: 10px 0 16px;">เปิด MT5 บนเครื่อง VPS เพื่อเริ่มซิงค์ข้อมูลจริงทันที</p>
           </div>
         `;
         return;
@@ -1065,11 +1346,28 @@
       grid.innerHTML = accounts.map(acc => {
         const floatClass = acc.floating >= 0 ? 'c-green' : 'c-red';
         const eqPercent = acc.balance > 0 ? Math.min(100, Math.max(0, (acc.equity / acc.balance) * 100)) : 100;
+        const curBadge = acc.is_cent 
+          ? `<span class="badge-cent">CENT ¢</span>` 
+          : `<span class="badge-usd">USD $</span>`;
+        const customBadge = acc.badge_text ? `<span class="badge-custom">${acc.badge_text}</span>` : '';
+
+        // If Cent port, show Raw Cents + Converted USD info
+        const centSubInfo = acc.is_cent 
+          ? `<span class="cent-subval private-val">${acc.raw_balance.toLocaleString('en-US')} ¢ (Cent Port)</span>`
+          : '';
+
+        const mfxBtn = acc.myfxbook_url ? `<a href="${acc.myfxbook_url}" target="_blank" class="btn-link">📈 Myfxbook</a>` : '';
+        const ctBtn = acc.copytrade_url ? `<a href="${acc.copytrade_url}" target="_blank" class="btn-link">🚀 Copy Trade</a>` : '';
+
         return `
           <div class="acard">
             <div class="acard-header">
               <div>
-                <div class="acard-name">${acc.name}</div>
+                <div class="acard-name">
+                  <span>${acc.name}</span>
+                  ${curBadge}
+                  ${customBadge}
+                </div>
                 <div class="acard-meta">
                   <span class="broker-tag">${acc.broker}</span>
                   <span>#${acc.login}</span>
@@ -1084,11 +1382,14 @@
             <div>
               <div class="stat-row">
                 <span class="stat-label">Balance</span>
-                <span class="stat-val private-val">${fmt(acc.balance)}</span>
+                <div>
+                  <span class="stat-val private-val">${fmt(acc.balance, null, acc.is_cent)}</span>
+                  ${centSubInfo}
+                </div>
               </div>
               <div class="stat-row">
                 <span class="stat-label">Equity</span>
-                <span class="stat-val c-accent private-val">${fmt(acc.equity)}</span>
+                <span class="stat-val c-accent private-val">${fmt(acc.equity, null, acc.is_cent)}</span>
               </div>
               <div class="progress-bar-bg">
                 <div class="progress-bar-fill" style="width: ${eqPercent}%"></div>
@@ -1098,11 +1399,11 @@
             <div>
               <div class="stat-row">
                 <span class="stat-label">Floating P/L</span>
-                <span class="stat-val ${floatClass} private-val">${acc.floating >= 0 ? '+' : ''}${fmt(acc.floating)}</span>
+                <span class="stat-val ${floatClass} private-val">${acc.floating >= 0 ? '+' : ''}${fmt(acc.floating, null, acc.is_cent)}</span>
               </div>
               <div class="stat-row">
                 <span class="stat-label">Today's Profit</span>
-                <span class="stat-val ${acc.today_profit >= 0 ? 'c-green' : 'c-red'} private-val">${acc.today_profit >= 0 ? '+' : ''}${fmt(acc.today_profit)}</span>
+                <span class="stat-val ${acc.today_profit >= 0 ? 'c-green' : 'c-red'} private-val">${acc.today_profit >= 0 ? '+' : ''}${fmt(acc.today_profit, null, acc.is_cent)}</span>
               </div>
               <div class="stat-row">
                 <span class="stat-label">Max Drawdown</span>
@@ -1114,15 +1415,18 @@
               </div>
             </div>
 
-            <button class="btn-detail" onclick="openAccountDetail('${acc.login}')">
-              <span>📊</span> ดูรายละเอียด & กราฟสด (Deep View)
-            </button>
+            <div class="acard-btns">
+              <button class="btn-detail" onclick="openAccountDetail('${acc.login}')">
+                <span>📊</span> ดูรายละเอียด & กราฟสด
+              </button>
+              ${mfxBtn}
+              ${ctBtn}
+            </div>
           </div>
         `;
       }).join('');
     }
 
-    // Render Omni Positions Table
     function renderAllPositionsTable(positions) {
       const tb = document.getElementById('allPositionsTableBody');
       if (positions.length === 0) {
@@ -1132,6 +1436,7 @@
       tb.innerHTML = positions.map(p => {
         const pClass = p.profit >= 0 ? 'c-green' : 'c-red';
         const bClass = (p.type || '').toUpperCase() === 'BUY' ? 'badge-buy' : 'badge-sell';
+        const centBadge = p.is_cent ? `<span class="badge-cent" style="font-size:0.65rem;">¢</span> ` : '';
         return `
           <tr>
             <td>#${p.ticket}</td>
@@ -1142,14 +1447,63 @@
             <td>${p.open_price}</td>
             <td>${p.current_price}</td>
             <td style="color:var(--dim);">${p.sl || '-'} / ${p.tp || '-'}</td>
-            <td class="${pClass} private-val" style="font-weight:700;">${p.profit >= 0 ? '+' : ''}${fmt(p.profit)}</td>
+            <td class="${pClass} private-val" style="font-weight:700;">${centBadge}${p.profit >= 0 ? '+' : ''}${fmt(p.profit)}</td>
             <td style="color:var(--muted);">${p.comment || p.magic || '-'}</td>
           </tr>
         `;
       }).join('');
     }
 
-    // Render Calendar Heatmap
+    // Load Trade History (Closed Deals)
+    async function loadTradeHistory() {
+      try {
+        const res = await fetch('/api/closed-deals?limit=100');
+        const data = await res.json();
+        renderHistoryStats(data.stats);
+
+        const tb = document.getElementById('tradeHistoryTableBody');
+        if (!data.deals || data.deals.length === 0) {
+          tb.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--dim); padding:24px;">ยังไม่มีประวัติออเดอร์ที่ปิด</td></tr>`;
+          return;
+        }
+
+        tb.innerHTML = data.deals.map(d => {
+          const isWin = d.net_profit >= 0;
+          const pClass = isWin ? 'c-green' : 'c-red';
+          const bClass = (d.type || '').toUpperCase() === 'BUY' ? 'badge-buy' : 'badge-sell';
+          return `
+            <tr>
+              <td>#${d.ticket}</td>
+              <td style="color:var(--muted); font-size:0.75rem;">${d.close_time}</td>
+              <td style="font-weight:700;">${d.symbol}</td>
+              <td><span class="${bClass}">${d.type}</span></td>
+              <td>${d.lots.toFixed(2)}</td>
+              <td>${d.open_price || '-'}</td>
+              <td>${d.close_price || '-'}</td>
+              <td class="${pClass} private-val" style="font-weight:700;">${isWin ? '+' : ''}${fmt(d.net_profit)}</td>
+              <td style="color:var(--muted); font-size:0.75rem;">${d.comment || '-'}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('Error loading history:', e);
+      }
+    }
+
+    function renderHistoryStats(st) {
+      if (!st) return;
+      document.getElementById('histTotalTrades').innerText = st.total_trades.toLocaleString();
+      document.getElementById('histWinLoss').innerText = `${st.win_trades} Win / ${st.loss_trades} Loss`;
+      document.getElementById('histWinRate').innerText = `${st.win_rate.toFixed(1)}%`;
+      document.getElementById('histProfitFactor').innerText = st.profit_factor.toFixed(2);
+      
+      const netEl = document.getElementById('histNetProfit');
+      netEl.innerText = (st.net_profit >= 0 ? '+' : '') + fmt(st.net_profit);
+      netEl.className = 'scard-val private-val ' + (st.net_profit >= 0 ? 'c-green' : 'c-red');
+
+      document.getElementById('histBestWorst').innerText = `${fmt(st.best_trade)} / ${fmt(st.worst_trade)}`;
+    }
+
     function renderCalendar(dailyList) {
       const grid = document.getElementById('calendarGrid');
       const days = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
@@ -1175,7 +1529,6 @@
       grid.innerHTML = html;
     }
 
-    // Render Analytics Tab Charts
     function renderAnalyticsCharts() {
       if (!latestData || !latestData.portfolio) return;
       const ctxG = document.getElementById('mainGrowthChart').getContext('2d');
@@ -1267,19 +1620,13 @@
           `).join('');
         }
 
-        // Render mini charts
         const ctxM1 = document.getElementById('modalGrowthChart').getContext('2d');
         if (modalGrowthChartInstance) modalGrowthChartInstance.destroy();
         modalGrowthChartInstance = new Chart(ctxM1, {
           type: 'line',
           data: {
             labels: data.snapshots.map(s => new Date(s.timestamp*1000).toLocaleDateString()),
-            datasets: [{
-              label: 'Equity',
-              data: data.snapshots.map(s => s.equity),
-              borderColor: '#00f0ff',
-              tension: 0.2
-            }]
+            datasets: [{ label: 'Equity', data: data.snapshots.map(s => s.equity), borderColor: '#00f0ff', tension: 0.2 }]
           },
           options: { responsive: true, maintainAspectRatio: false }
         });
@@ -1290,11 +1637,7 @@
           type: 'bar',
           data: {
             labels: data.daily_stats.map(s => s.date.slice(5)),
-            datasets: [{
-              label: 'Profit',
-              data: data.daily_stats.map(s => s.profit),
-              backgroundColor: data.daily_stats.map(s => s.profit >= 0 ? '#10b981' : '#f43f5e')
-            }]
+            datasets: [{ label: 'Profit', data: data.daily_stats.map(s => s.profit), backgroundColor: data.daily_stats.map(s => s.profit >= 0 ? '#10b981' : '#f43f5e') }]
           },
           options: { responsive: true, maintainAspectRatio: false }
         });
@@ -1309,11 +1652,201 @@
       document.getElementById('detailModal').classList.remove('active');
     }
 
-    function copyWebhookUrl() {
-      const input = document.getElementById('webhookUrlInput');
-      input.select();
-      navigator.clipboard.writeText(input.value);
-      alert('คัดลอก URL เรียบร้อย: ' + input.value);
+    // ─────────────────────────────────────────────────────────────
+    // ADMIN BACKOFFICE LOGIC
+    // ─────────────────────────────────────────────────────────────
+    function openAdminModal() {
+      document.getElementById('adminModal').classList.add('active');
+      if (isAdminAuthed) {
+        showAdminDashboard();
+      } else {
+        document.getElementById('adminLoginView').style.display = 'block';
+        document.getElementById('adminDashboardView').style.display = 'none';
+      }
+    }
+
+    function closeAdminModal() {
+      document.getElementById('adminModal').classList.remove('active');
+    }
+
+    async function submitAdminLogin() {
+      const pw = document.getElementById('adminPasswordInput').value;
+      const errEl = document.getElementById('adminLoginErr');
+      errEl.style.display = 'none';
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pw })
+        });
+        if (res.ok) {
+          isAdminAuthed = true;
+          showAdminDashboard();
+        } else {
+          errEl.style.display = 'block';
+        }
+      } catch (e) {
+        alert('Login failed: ' + e);
+      }
+    }
+
+    function switchAdminTab(t) {
+      document.getElementById('btnAdminTabAcc').classList.toggle('active', t === 'acc');
+      document.getElementById('btnAdminTabGlobal').classList.toggle('active', t === 'global');
+      document.getElementById('adminSubtabAcc').style.display = t === 'acc' ? 'flex' : 'none';
+      document.getElementById('adminSubtabGlobal').style.display = t === 'global' ? 'flex' : 'none';
+    }
+
+    async function showAdminDashboard() {
+      document.getElementById('adminLoginView').style.display = 'none';
+      document.getElementById('adminDashboardView').style.display = 'flex';
+      
+      try {
+        const res = await fetch('/api/admin/settings');
+        const data = await res.json();
+        
+        // Populate Globals
+        const g = data.globals || {};
+        document.getElementById('cfgSiteTitle').value = g.site_title || 'NEXUS QUANT PRO';
+        document.getElementById('cfgSiteSubtitle').value = g.site_subtitle || '';
+        document.getElementById('cfgUsdThb').value = g.usd_thb_rate || '34.65';
+        document.getElementById('cfgAnnouncement').value = g.announcement || '';
+        document.getElementById('cfgContactLine').value = g.contact_line || '';
+        document.getElementById('cfgContactTelegram').value = g.contact_telegram || '';
+        document.getElementById('cfgContactFb').value = g.contact_facebook || '';
+
+        // Populate Accounts List
+        const list = document.getElementById('adminAccountsList');
+        if (!data.accounts || data.accounts.length === 0) {
+          list.innerHTML = `<div style="text-align:center; color:var(--dim); padding:20px;">ไม่พบบัญชี MT5 ในระบบ</div>`;
+          return;
+        }
+
+        list.innerHTML = data.accounts.map(a => `
+          <div class="admin-account-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div>
+                <b style="font-size:1rem; color:var(--accent);">#${a.login}</b> 
+                <span style="font-size:0.8rem; color:var(--muted);">(${a.broker} · ${a.server})</span>
+              </div>
+              <button class="btn-tool" style="color:var(--red); border-color:var(--red); padding:4px 8px; font-size:0.75rem;" onclick="deleteAdminAccount('${a.login}')">
+                🗑️ ลบพอร์ตนี้
+              </button>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+              <div class="form-group">
+                <label class="form-label">ประเภทหน่วยเงิน (Currency Type):</label>
+                <select id="accType_${a.login}" class="form-input">
+                  <option value="AUTO" ${a.account_type === 'AUTO' ? 'selected' : ''}>🔍 AUTO (ตรวจหาอัตโนมัติ)</option>
+                  <option value="CENT" ${a.account_type === 'CENT' ? 'selected' : ''}>¢ CENT (บัญชีเซ็นต์ - หาร 100)</option>
+                  <option value="USD" ${a.account_type === 'USD' ? 'selected' : ''}>$ USD (บัญชีดอลลาร์ปกติ)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">ชื่อพอร์ตที่แสดง (Custom Display Name):</label>
+                <input type="text" id="accName_${a.login}" class="form-input" value="${a.custom_name || a.name || ''}" placeholder="เช่น DRFX Gold Hunter">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">ป้ายกำกับ (Badge Label):</label>
+                <input type="text" id="accBadge_${a.login}" class="form-input" value="${a.badge_text || ''}" placeholder="เช่น Low Risk, Grid, Scalper">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">การแสดงผลสู่สาธารณะ:</label>
+                <select id="accHidden_${a.login}" class="form-input">
+                  <option value="0" ${a.is_hidden == 0 ? 'selected' : ''}>👁️ แสดงบนหน้าเว็บปกติ</option>
+                  <option value="1" ${a.is_hidden == 1 ? 'selected' : ''}>🔒 ซ่อนจากสาธารณะ (แอดมินเห็นคนเดียว)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">ลิงก์ Copy Trade (ถ้ามี):</label>
+                <input type="text" id="accCt_${a.login}" class="form-input" value="${a.copytrade_url || ''}" placeholder="https://...">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">ลิงก์ Myfxbook (ถ้ามี):</label>
+                <input type="text" id="accMfx_${a.login}" class="form-input" value="${a.myfxbook_url || ''}" placeholder="https://myfxbook.com/...">
+              </div>
+            </div>
+
+            <button class="btn-detail" style="background:var(--accent); color:#030a16; font-weight:700; padding:8px 16px; margin-top:8px;" onclick="saveAccountSetting('${a.login}')">
+              💾 บันทึกการตั้งค่าพอร์ตนี้
+            </button>
+          </div>
+        `).join('');
+      } catch (e) {
+        alert('Error loading admin settings: ' + e);
+      }
+    }
+
+    async function saveAccountSetting(login) {
+      const payload = {
+        login: String(login),
+        account_type: document.getElementById(`accType_${login}`).value,
+        custom_name: document.getElementById(`accName_${login}`).value,
+        badge_text: document.getElementById(`accBadge_${login}`).value,
+        is_hidden: parseInt(document.getElementById(`accHidden_${login}`).value || '0'),
+        copytrade_url: document.getElementById(`accCt_${login}`).value,
+        myfxbook_url: document.getElementById(`accMfx_${login}`).value
+      };
+      try {
+        const res = await fetch('/api/admin/account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          alert(`✅ บันทึกการตั้งค่าพอร์ต #${login} สำเร็จแล้ว!`);
+          fetch('/api/snapshot').then(r => r.json()).then(d => { latestData = d; renderDashboard(d); });
+        }
+      } catch (e) {
+        alert('Save failed: ' + e);
+      }
+    }
+
+    async function saveGlobalSettings() {
+      const payload = {
+        site_title: document.getElementById('cfgSiteTitle').value,
+        site_subtitle: document.getElementById('cfgSiteSubtitle').value,
+        usd_thb_rate: document.getElementById('cfgUsdThb').value,
+        announcement: document.getElementById('cfgAnnouncement').value,
+        contact_line: document.getElementById('cfgContactLine').value,
+        contact_telegram: document.getElementById('cfgContactTelegram').value,
+        contact_facebook: document.getElementById('cfgContactFb').value,
+        new_password: document.getElementById('cfgNewPassword').value || null
+      };
+      try {
+        const res = await fetch('/api/admin/global', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          alert('✅ บันทึกการตั้งค่าระบบส่วนกลางสำเร็จเรียบร้อย!');
+          document.getElementById('cfgNewPassword').value = '';
+          fetch('/api/snapshot').then(r => r.json()).then(d => { latestData = d; renderDashboard(d); });
+        }
+      } catch (e) {
+        alert('Save failed: ' + e);
+      }
+    }
+
+    async function deleteAdminAccount(login) {
+      if (!confirm(`คุณต้องการลบพอร์ต #${login} ออกจากแดชบอร์ดใช่หรือไม่?`)) return;
+      try {
+        const res = await fetch(`/api/admin/account/${login}`, { method: 'DELETE' });
+        if (res.ok) {
+          alert(`ลบพอร์ต #${login} เรียบร้อยแล้ว`);
+          showAdminDashboard();
+          fetch('/api/snapshot').then(r => r.json()).then(d => { latestData = d; renderDashboard(d); });
+        }
+      } catch (e) {
+        alert('Delete error: ' + e);
+      }
     }
 
     // Export CSV
@@ -1331,10 +1864,11 @@
       a.click();
     }
 
-    async function loadDemoData() {
-      await fetch('/api/mock-demo');
-      playChime(true);
-      fetch('/api/snapshot').then(r => r.json()).then(d => { latestData = d; renderDashboard(d); });
+    function copyWebhookUrl() {
+      const input = document.getElementById('webhookUrlInput');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      alert('คัดลอก URL เรียบร้อย: ' + input.value);
     }
 
     function filterPositions() {

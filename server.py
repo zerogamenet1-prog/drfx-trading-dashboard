@@ -104,6 +104,40 @@ def init_db():
         magic INTEGER
     )
     """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS account_settings (
+        login TEXT PRIMARY KEY,
+        custom_name TEXT DEFAULT '',
+        account_type TEXT DEFAULT 'AUTO',
+        is_hidden INTEGER DEFAULT 0,
+        badge_text TEXT DEFAULT '',
+        myfxbook_url TEXT DEFAULT '',
+        copytrade_url TEXT DEFAULT '',
+        note TEXT DEFAULT ''
+    )
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS global_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT
+    )
+    """)
+    
+    # Defaults for global settings
+    defaults = {
+        "site_title": "NEXUS QUANT PRO",
+        "site_subtitle": "Institutional Algorithmic Trading Intelligence",
+        "admin_password": "admin1234",
+        "usd_thb_rate": "34.65",
+        "announcement": "",
+        "theme_accent": "#00f0ff",
+        "contact_telegram": "@drfx_algo",
+        "contact_line": "@Drfx",
+        "contact_facebook": "drfxtrading"
+    }
+    for k, v in defaults.items():
+        cursor.execute("INSERT OR IGNORE INTO global_settings (key, value) VALUES (?, ?)", (k, v))
+
     conn.commit()
     conn.close()
 
@@ -194,43 +228,110 @@ class ReportPayload(BaseModel):
 # ──────────────────────────────────────────────────────────────────
 # HELPERS
 # ──────────────────────────────────────────────────────────────────
-def calculate_portfolio_snapshot():
+def calculate_portfolio_snapshot(is_admin: bool = False):
     conn = get_db()
     cursor = conn.cursor()
+    
+    # 1. Fetch Global Settings
+    cursor.execute("SELECT key, value FROM global_settings")
+    g_settings = {r["key"]: r["value"] for r in cursor.fetchall()}
+    
+    usd_rate = float(g_settings.get("usd_thb_rate", "34.65") or 34.65)
+    site_title = g_settings.get("site_title", "NEXUS QUANT PRO")
+    site_subtitle = g_settings.get("site_subtitle", "Institutional Algorithmic Trading Intelligence")
+    announcement = g_settings.get("announcement", "")
+    theme_accent = g_settings.get("theme_accent", "#00f0ff")
+
+    # 2. Fetch Account Settings
+    cursor.execute("SELECT * FROM account_settings")
+    acc_settings_map = {r["login"]: dict(r) for r in cursor.fetchall()}
+
+    # 3. Fetch Accounts
     cursor.execute("SELECT * FROM accounts ORDER BY balance DESC")
     rows = cursor.fetchall()
     
     accounts = []
     all_positions = []
-    total_balance = 0.0
-    total_equity = 0.0
-    total_floating = 0.0
-    total_today = 0.0
-    total_yesterday = 0.0
-    total_weekly = 0.0
-    total_monthly = 0.0
+    total_balance_usd = 0.0
+    total_equity_usd = 0.0
+    total_floating_usd = 0.0
+    total_today_usd = 0.0
+    total_yesterday_usd = 0.0
+    total_weekly_usd = 0.0
+    total_monthly_usd = 0.0
     total_open_orders = 0
     total_lots = 0.0
 
     now_ts = int(time.time())
 
     for r in rows:
-        is_online = (now_ts - r["last_ping"]) < 30 # Online if reported within 30s
+        login_str = str(r["login"])
+        st = acc_settings_map.get(login_str, {})
+        
+        is_hidden = bool(st.get("is_hidden", 0))
+        if is_hidden and not is_admin:
+            continue # Skip hidden ports for regular visitors
+
+        # Cent vs USD determination
+        configured_type = st.get("account_type", "AUTO")
+        if configured_type == "CENT":
+            is_cent = True
+        elif configured_type == "USD":
+            is_cent = False
+        else:
+            # Auto-detect Cent
+            curr = (r["currency"] or "").upper()
+            srv = (r["server"] or "").lower()
+            brk = (r["broker"] or "").lower()
+            is_cent = ("USC" in curr or "CENT" in curr or "cent" in srv or "cent" in brk)
+
+        # Raw values from MT5
+        raw_bal = round(r["balance"], 2)
+        raw_eq = round(r["equity"], 2)
+        raw_fl = round(r["floating"], 2)
+        raw_td = round(r["today_profit"], 2)
+        raw_yd = round(r["yesterday_profit"], 2)
+        raw_wk = round(r["weekly_profit"], 2)
+        raw_mo = round(r["monthly_profit"], 2)
+
+        # Normalized values in USD (dividing by 100 if Cent)
+        norm_bal = round(raw_bal / 100.0, 2) if is_cent else raw_bal
+        norm_eq = round(raw_eq / 100.0, 2) if is_cent else raw_eq
+        norm_fl = round(raw_fl / 100.0, 2) if is_cent else raw_fl
+        norm_td = round(raw_td / 100.0, 2) if is_cent else raw_td
+        norm_yd = round(raw_yd / 100.0, 2) if is_cent else raw_yd
+        norm_wk = round(raw_wk / 100.0, 2) if is_cent else raw_wk
+        norm_mo = round(raw_mo / 100.0, 2) if is_cent else raw_mo
+
+        disp_name = st.get("custom_name") or r["name"] or f"Account {login_str}"
+        is_online = (now_ts - r["last_ping"]) < 30
+
         acc_dict = {
-            "login": r["login"],
-            "name": r["name"] or f"Account {r['login']}",
+            "login": login_str,
+            "name": disp_name,
             "broker": r["broker"],
             "server": r["server"],
-            "currency": r["currency"] or "USD",
-            "balance": round(r["balance"], 2),
-            "equity": round(r["equity"], 2),
+            "currency": r["currency"] or ("USC" if is_cent else "USD"),
+            "is_cent": is_cent,
+            "account_type": "CENT" if is_cent else "USD",
+            "configured_type": configured_type,
+            "badge_text": st.get("badge_text", ""),
+            "myfxbook_url": st.get("myfxbook_url", ""),
+            "copytrade_url": st.get("copytrade_url", ""),
+            "is_hidden": is_hidden,
+            # Both raw and normalized USD
+            "balance": norm_bal,
+            "equity": norm_eq,
+            "floating": norm_fl,
+            "today_profit": norm_td,
+            "yesterday_profit": norm_yd,
+            "weekly_profit": norm_wk,
+            "monthly_profit": norm_mo,
+            "raw_balance": raw_bal,
+            "raw_equity": raw_eq,
+            "raw_floating": raw_fl,
             "margin": round(r["margin"], 2),
             "free_margin": round(r["free_margin"], 2),
-            "floating": round(r["floating"], 2),
-            "today_profit": round(r["today_profit"], 2),
-            "yesterday_profit": round(r["yesterday_profit"], 2),
-            "weekly_profit": round(r["weekly_profit"], 2),
-            "monthly_profit": round(r["monthly_profit"], 2),
             "max_dd": round(r["max_dd"], 2),
             "current_dd": round(r["current_dd"], 2),
             "open_orders_count": r["open_orders_count"],
@@ -239,28 +340,31 @@ def calculate_portfolio_snapshot():
             "is_online": is_online
         }
         accounts.append(acc_dict)
-        
-        # Flatten all open positions across accounts
+
+        # Flatten open positions with normalized profit
         try:
             raw_pos = json.loads(r["raw_positions"] or "[]")
             for p in raw_pos:
-                p["account_name"] = acc_dict["name"]
-                p["account_login"] = r["login"]
+                p["account_name"] = disp_name
+                p["account_login"] = login_str
+                p["is_cent"] = is_cent
+                p["raw_profit"] = p.get("profit", 0.0)
+                p["profit"] = round(p.get("profit", 0.0) / 100.0, 2) if is_cent else p.get("profit", 0.0)
                 all_positions.append(p)
         except Exception:
             pass
 
-        total_balance += r["balance"]
-        total_equity += r["equity"]
-        total_floating += r["floating"]
-        total_today += r["today_profit"]
-        total_yesterday += r["yesterday_profit"]
-        total_weekly += r["weekly_profit"]
-        total_monthly += r["monthly_profit"]
+        total_balance_usd += norm_bal
+        total_equity_usd += norm_eq
+        total_floating_usd += norm_fl
+        total_today_usd += norm_td
+        total_yesterday_usd += norm_yd
+        total_weekly_usd += norm_wk
+        total_monthly_usd += norm_mo
         total_open_orders += r["open_orders_count"]
         total_lots += r["total_lots"]
 
-    # Gather aggregated daily history across all accounts for the calendar
+    # Gather aggregated daily history
     cursor.execute("""
     SELECT date, SUM(profit) as total_profit, SUM(trades_count) as total_trades 
     FROM daily_history GROUP BY date ORDER BY date DESC LIMIT 45
@@ -306,18 +410,18 @@ def calculate_portfolio_snapshot():
         "worst_trade": round(s["worst_trade"] or 0.0, 2)
     }
 
-    total_profit = total_equity - total_balance
+    total_profit_usd = total_equity_usd - total_balance_usd
 
     return {
         "portfolio": {
-            "total_balance": round(total_balance, 2),
-            "total_equity": round(total_equity, 2),
-            "total_floating": round(total_floating, 2),
-            "total_profit": round(total_profit, 2),
-            "today_profit": round(total_today, 2),
-            "yesterday_profit": round(total_yesterday, 2),
-            "weekly_profit": round(total_weekly, 2),
-            "monthly_profit": round(total_monthly, 2),
+            "total_balance": round(total_balance_usd, 2),
+            "total_equity": round(total_equity_usd, 2),
+            "total_floating": round(total_floating_usd, 2),
+            "total_profit": round(total_profit_usd, 2),
+            "today_profit": round(total_today_usd, 2),
+            "yesterday_profit": round(total_yesterday_usd, 2),
+            "weekly_profit": round(total_weekly_usd, 2),
+            "monthly_profit": round(total_monthly_usd, 2),
             "total_open_orders": total_open_orders,
             "total_lots": round(total_lots, 2),
             "accounts_count": len(accounts),
@@ -326,8 +430,17 @@ def calculate_portfolio_snapshot():
             "daily_calendar": daily_calendar,
             "performance_stats": performance_stats
         },
+        "config": {
+            "site_title": site_title,
+            "site_subtitle": site_subtitle,
+            "announcement": announcement,
+            "theme_accent": theme_accent,
+            "contact_telegram": g_settings.get("contact_telegram", ""),
+            "contact_line": g_settings.get("contact_line", ""),
+            "contact_facebook": g_settings.get("contact_facebook", "")
+        },
         "usdthb": {
-            "rate": 34.65,
+            "rate": usd_rate,
             "source": "Bank of Thailand / Market Ref",
             "updated": datetime.now().strftime("%Y-%m-%d %H:%M")
         },
@@ -493,6 +606,139 @@ async def get_closed_deals(limit: int = 150, symbol: Optional[str] = None):
             "total_swap": round(s["total_swap"] or 0.0, 2)
         }
     }
+
+# ──────────────────────────────────────────────────────────────────
+# ADMIN BACKOFFICE ENDPOINTS
+# ──────────────────────────────────────────────────────────────────
+class AdminLoginReq(BaseModel):
+    password: str
+
+class AccountSettingReq(BaseModel):
+    login: str
+    custom_name: Optional[str] = ""
+    account_type: Optional[str] = "AUTO" # AUTO, USD, CENT
+    is_hidden: Optional[int] = 0
+    badge_text: Optional[str] = ""
+    myfxbook_url: Optional[str] = ""
+    copytrade_url: Optional[str] = ""
+    note: Optional[str] = ""
+
+class GlobalSettingReq(BaseModel):
+    site_title: Optional[str] = None
+    site_subtitle: Optional[str] = None
+    usd_thb_rate: Optional[str] = None
+    announcement: Optional[str] = None
+    theme_accent: Optional[str] = None
+    contact_telegram: Optional[str] = None
+    contact_line: Optional[str] = None
+    contact_facebook: Optional[str] = None
+    new_password: Optional[str] = None
+
+@app.post("/api/admin/login")
+async def admin_login(req: AdminLoginReq):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT value FROM global_settings WHERE key = 'admin_password'")
+    row = c.fetchone()
+    conn.close()
+    real_pw = row["value"] if row else "admin1234"
+    if req.password == real_pw:
+        return {"status": "ok", "token": "nexus_admin_authorized", "message": "Login successful"}
+    raise HTTPException(status_code=401, detail="รหัสผ่าน Admin ไม่ถูกต้อง")
+
+@app.get("/api/admin/settings")
+async def get_admin_settings():
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT key, value FROM global_settings")
+    globals_dict = {r["key"]: r["value"] for r in c.fetchall()}
+    
+    c.execute("SELECT * FROM accounts ORDER BY balance DESC")
+    raw_accs = [dict(r) for r in c.fetchall()]
+    
+    c.execute("SELECT * FROM account_settings")
+    acc_settings = {r["login"]: dict(r) for r in c.fetchall()}
+    conn.close()
+    
+    merged = []
+    for a in raw_accs:
+        l_str = str(a["login"])
+        st = acc_settings.get(l_str, {})
+        merged.append({
+            "login": l_str,
+            "name": a["name"],
+            "broker": a["broker"],
+            "server": a["server"],
+            "currency": a["currency"],
+            "balance": a["balance"],
+            "custom_name": st.get("custom_name", ""),
+            "account_type": st.get("account_type", "AUTO"),
+            "is_hidden": st.get("is_hidden", 0),
+            "badge_text": st.get("badge_text", ""),
+            "myfxbook_url": st.get("myfxbook_url", ""),
+            "copytrade_url": st.get("copytrade_url", ""),
+            "note": st.get("note", "")
+        })
+        
+    return {
+        "globals": globals_dict,
+        "accounts": merged
+    }
+
+@app.post("/api/admin/account")
+async def update_account_setting(req: AccountSettingReq):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""
+    INSERT INTO account_settings (login, custom_name, account_type, is_hidden, badge_text, myfxbook_url, copytrade_url, note)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(login) DO UPDATE SET
+        custom_name = excluded.custom_name,
+        account_type = excluded.account_type,
+        is_hidden = excluded.is_hidden,
+        badge_text = excluded.badge_text,
+        myfxbook_url = excluded.myfxbook_url,
+        copytrade_url = excluded.copytrade_url,
+        note = excluded.note
+    """, (req.login, req.custom_name, req.account_type, req.is_hidden, req.badge_text, req.myfxbook_url, req.copytrade_url, req.note))
+    conn.commit()
+    conn.close()
+    
+    asyncio.create_task(manager.broadcast(calculate_portfolio_snapshot()))
+    return {"status": "ok", "message": f"Updated account {req.login}"}
+
+@app.post("/api/admin/global")
+async def update_global_setting(req: GlobalSettingReq):
+    conn = get_db()
+    c = conn.cursor()
+    updates = req.dict(exclude_none=True)
+    if "new_password" in updates and updates["new_password"]:
+        updates["admin_password"] = updates.pop("new_password")
+    for k, v in updates.items():
+        c.execute("""
+        INSERT INTO global_settings (key, value) VALUES (?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+        """, (k, str(v)))
+    conn.commit()
+    conn.close()
+    
+    asyncio.create_task(manager.broadcast(calculate_portfolio_snapshot()))
+    return {"status": "ok", "message": "Updated global settings"}
+
+@app.delete("/api/admin/account/{login}")
+async def delete_account(login: str):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("DELETE FROM accounts WHERE login = ?", (login,))
+    c.execute("DELETE FROM account_settings WHERE login = ?", (login,))
+    c.execute("DELETE FROM snapshots WHERE login = ?", (login,))
+    c.execute("DELETE FROM daily_history WHERE login = ?", (login,))
+    c.execute("DELETE FROM closed_deals WHERE login = ?", (login,))
+    conn.commit()
+    conn.close()
+    
+    asyncio.create_task(manager.broadcast(calculate_portfolio_snapshot()))
+    return {"status": "ok", "message": f"Deleted account {login}"}
 
 @app.get("/api/snapshot")
 async def get_snapshot():
