@@ -84,6 +84,26 @@ def init_db():
         UNIQUE(login, date) ON CONFLICT REPLACE
     )
     """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS closed_deals (
+        ticket INTEGER PRIMARY KEY,
+        login TEXT,
+        account_name TEXT,
+        symbol TEXT,
+        type TEXT,
+        lots REAL,
+        open_price REAL,
+        close_price REAL,
+        profit REAL,
+        swap REAL DEFAULT 0,
+        commission REAL DEFAULT 0,
+        net_profit REAL,
+        close_time TEXT,
+        close_timestamp INTEGER,
+        comment TEXT,
+        magic INTEGER
+    )
+    """)
     conn.commit()
     conn.close()
 
@@ -140,9 +160,15 @@ class ClosedDealModel(BaseModel):
     symbol: str
     type: str
     lots: float
-    profit: float
-    close_time: str
+    open_price: Optional[float] = 0.0
     close_price: Optional[float] = 0.0
+    profit: float
+    swap: Optional[float] = 0.0
+    commission: Optional[float] = 0.0
+    close_time: str
+    close_timestamp: Optional[int] = 0
+    comment: Optional[str] = ""
+    magic: Optional[int] = 0
 
 class ReportPayload(BaseModel):
     secret: Optional[str] = ""
@@ -244,7 +270,41 @@ def calculate_portfolio_snapshot():
         for r in cursor.fetchall()
     ]
 
+    # Performance stats from closed deals
+    cursor.execute("""
+    SELECT 
+        COUNT(*) as total_trades,
+        SUM(CASE WHEN net_profit > 0 THEN 1 ELSE 0 END) as win_trades,
+        SUM(CASE WHEN net_profit < 0 THEN 1 ELSE 0 END) as loss_trades,
+        SUM(CASE WHEN net_profit > 0 THEN net_profit ELSE 0 END) as gross_profit,
+        ABS(SUM(CASE WHEN net_profit < 0 THEN net_profit ELSE 0 END)) as gross_loss,
+        SUM(net_profit) as total_profit,
+        MAX(net_profit) as best_trade,
+        MIN(net_profit) as worst_trade
+    FROM closed_deals
+    """)
+    s = cursor.fetchone()
     conn.close()
+
+    tot_trades = s["total_trades"] or 0
+    wins = s["win_trades"] or 0
+    gp = round(s["gross_profit"] or 0.0, 2)
+    gl = round(s["gross_loss"] or 0.0, 2)
+    pf = round(gp / gl, 2) if gl > 0 else (gp if gp > 0 else 0)
+    wr = round(wins / tot_trades * 100, 2) if tot_trades > 0 else 0
+
+    performance_stats = {
+        "total_trades": tot_trades,
+        "win_trades": wins,
+        "loss_trades": s["loss_trades"] or 0,
+        "win_rate": wr,
+        "profit_factor": pf,
+        "gross_profit": gp,
+        "gross_loss": gl,
+        "net_profit": round(s["total_profit"] or 0.0, 2),
+        "best_trade": round(s["best_trade"] or 0.0, 2),
+        "worst_trade": round(s["worst_trade"] or 0.0, 2)
+    }
 
     total_profit = total_equity - total_balance
 
@@ -263,7 +323,8 @@ def calculate_portfolio_snapshot():
             "accounts_count": len(accounts),
             "accounts": accounts,
             "all_positions": all_positions,
-            "daily_calendar": daily_calendar
+            "daily_calendar": daily_calendar,
+            "performance_stats": performance_stats
         },
         "usdthb": {
             "rate": 34.65,
@@ -349,6 +410,24 @@ async def report_telemetry(payload: ReportPayload):
         profit = excluded.profit
     """, (login_str, today_str, payload.today_profit, 0))
 
+    # Save closed deals if provided
+    if payload.closed_deals:
+        for d in payload.closed_deals:
+            net_p = d.profit + (d.swap or 0.0) + (d.commission or 0.0)
+            cursor.execute("""
+            INSERT INTO closed_deals (
+                ticket, login, account_name, symbol, type, lots, open_price, close_price,
+                profit, swap, commission, net_profit, close_time, close_timestamp, comment, magic
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(ticket) DO UPDATE SET
+                net_profit = excluded.net_profit,
+                profit = excluded.profit
+            """, (
+                d.ticket, login_str, payload.name, d.symbol, d.type, d.lots, d.open_price, d.close_price,
+                d.profit, d.swap, d.commission, net_p, d.close_time, d.close_timestamp or now_ts,
+                d.comment, d.magic
+            ))
+
     conn.commit()
     conn.close()
 
@@ -357,6 +436,63 @@ async def report_telemetry(payload: ReportPayload):
     asyncio.create_task(manager.broadcast(snapshot))
 
     return {"status": "ok", "login": login_str, "timestamp": now_ts}
+
+@app.get("/api/closed-deals")
+async def get_closed_deals(limit: int = 150, symbol: Optional[str] = None):
+    conn = get_db()
+    c = conn.cursor()
+    query = "SELECT * FROM closed_deals"
+    params = []
+    if symbol:
+        query += " WHERE symbol LIKE ?"
+        params.append(f"%{symbol}%")
+    query += " ORDER BY close_timestamp DESC, ticket DESC LIMIT ?"
+    params.append(limit)
+    c.execute(query, params)
+    deals = [dict(r) for r in c.fetchall()]
+
+    # Aggregated performance stats
+    c.execute("""
+    SELECT 
+        COUNT(*) as total_trades,
+        SUM(CASE WHEN net_profit > 0 THEN 1 ELSE 0 END) as win_trades,
+        SUM(CASE WHEN net_profit < 0 THEN 1 ELSE 0 END) as loss_trades,
+        SUM(CASE WHEN net_profit > 0 THEN net_profit ELSE 0 END) as gross_profit,
+        ABS(SUM(CASE WHEN net_profit < 0 THEN net_profit ELSE 0 END)) as gross_loss,
+        SUM(net_profit) as total_profit,
+        MAX(net_profit) as best_trade,
+        MIN(net_profit) as worst_trade,
+        SUM(commission) as total_commission,
+        SUM(swap) as total_swap
+    FROM closed_deals
+    """)
+    s = c.fetchone()
+    conn.close()
+
+    tot = s["total_trades"] or 0
+    wins = s["win_trades"] or 0
+    gp = round(s["gross_profit"] or 0.0, 2)
+    gl = round(s["gross_loss"] or 0.0, 2)
+    pf = round(gp / gl, 2) if gl > 0 else (gp if gp > 0 else 0)
+    wr = round(wins / tot * 100, 2) if tot > 0 else 0
+
+    return {
+        "deals": deals,
+        "stats": {
+            "total_trades": tot,
+            "win_trades": wins,
+            "loss_trades": s["loss_trades"] or 0,
+            "win_rate": wr,
+            "profit_factor": pf,
+            "gross_profit": gp,
+            "gross_loss": gl,
+            "net_profit": round(s["total_profit"] or 0.0, 2),
+            "best_trade": round(s["best_trade"] or 0.0, 2),
+            "worst_trade": round(s["worst_trade"] or 0.0, 2),
+            "total_commission": round(s["total_commission"] or 0.0, 2),
+            "total_swap": round(s["total_swap"] or 0.0, 2)
+        }
+    }
 
 @app.get("/api/snapshot")
 async def get_snapshot():

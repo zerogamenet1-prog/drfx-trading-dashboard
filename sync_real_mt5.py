@@ -1,9 +1,12 @@
 """
-Real-time MT5 Telemetry Synchronizer for NEXUS QUANT PRO Dashboard.
-Connects directly to active MetaTrader 5 terminals and pushes live data.
+NEXUS QUANT PRO - Smart Auto-Discovering MT5 Synchronizer for VPS.
+Automatically scans all MT5 terminals installed on the VPS and syncs
+account balance, equity, positions, and trade history in real-time.
 """
+import glob
 import json
 import os
+import sqlite3
 import sys
 import time
 from datetime import datetime, timedelta
@@ -12,33 +15,33 @@ import requests
 
 API_URL = "http://127.0.0.1:8000/api/report"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "dashboard.db")
 
-TERMINALS = [
-    {
-        "name": "InterStellar MT5 (PRO X1 Grid)",
-        "path": r"C:\Program Files\InterStellar MT5\terminal64.exe"
-    },
-    {
-        "name": "KVB Plus Real MT5",
-        "path": r"C:\Program Files\MetaTrader 5\terminal64.exe"
-    }
-]
-
-def clean_old_demo_data():
-    """Removes mock/demo accounts from SQLite database so only real accounts show."""
-    import sqlite3
-    db_path = os.path.join(BASE_DIR, "dashboard.db")
-    if os.path.exists(db_path):
-        conn = sqlite3.connect(db_path)
-        c = conn.cursor()
-        # Delete demo account logins
-        demo_logins = ("8899201", "6644109", "3311902")
-        c.execute("DELETE FROM accounts WHERE login IN (?, ?, ?)", demo_logins)
-        c.execute("DELETE FROM snapshots WHERE login IN (?, ?, ?)", demo_logins)
-        c.execute("DELETE FROM daily_history WHERE login IN (?, ?, ?)", demo_logins)
-        conn.commit()
-        conn.close()
-        print("🧹 Cleaned old demo mock data from database.")
+def discover_mt5_terminals():
+    """Auto-scans Program Files & AppData for all MT5 terminal64.exe instances."""
+    terminals = set()
+    
+    # 1. Standard Program Files
+    patterns = [
+        r"C:\Program Files\*\terminal64.exe",
+        r"C:\Program Files (x86)\*\terminal64.exe",
+        r"D:\Program Files\*\terminal64.exe",
+        r"C:\Users\*\AppData\Roaming\MetaQuotes\Terminal\*\terminal64.exe"
+    ]
+    for pat in patterns:
+        for p in glob.glob(pat):
+            if os.path.isfile(p):
+                terminals.add(p)
+                
+    # Format list
+    res = []
+    for path in sorted(terminals):
+        folder = os.path.basename(os.path.dirname(path))
+        res.append({
+            "name": folder,
+            "path": path
+        })
+    return res
 
 def sync_terminal(term_config):
     path = term_config["path"]
@@ -56,9 +59,9 @@ def sync_terminal(term_config):
             return False
             
         login = acc.login
-        broker = acc.company
-        server = acc.server
-        currency = acc.currency
+        broker = acc.company or term_name
+        server = acc.server or "VPS-Terminal"
+        currency = acc.currency or "USD"
         balance = round(acc.balance, 2)
         equity = round(acc.equity, 2)
         margin = round(acc.margin, 2)
@@ -85,24 +88,32 @@ def sync_terminal(term_config):
                 "magic": p.magic
             })
             
-        # Calculate profits from real closed deals
+        # Read closed deals (last 90 days)
         now = datetime.now()
+        start_date = now - timedelta(days=90)
+        deals = mt5.history_deals_get(start_date, now) or []
+        
         start_today = datetime(now.year, now.month, now.day)
         start_yesterday = start_today - timedelta(days=1)
         start_week = start_today - timedelta(days=now.weekday())
         start_month = datetime(now.year, now.month, 1)
-        
-        deals = mt5.history_deals_get(start_month - timedelta(days=30), now) or []
         
         today_profit = 0.0
         yesterday_profit = 0.0
         weekly_profit = 0.0
         monthly_profit = 0.0
         
+        closed_deals_list = []
+        daily_profit_map = {}
+        
         for d in deals:
-            if d.entry in (1, 2, 3): # deal out / inout
+            if d.entry in (1, 2, 3):
                 d_time = datetime.fromtimestamp(d.time)
-                p_val = d.profit + d.swap + d.commission
+                day_str = d_time.strftime("%Y-%m-%d")
+                p_val = round(d.profit + d.swap + d.commission, 2)
+                
+                daily_profit_map[day_str] = round(daily_profit_map.get(day_str, 0.0) + p_val, 2)
+                
                 if d_time >= start_today:
                     today_profit += p_val
                 elif d_time >= start_yesterday and d_time < start_today:
@@ -112,6 +123,41 @@ def sync_terminal(term_config):
                 if d_time >= start_month:
                     monthly_profit += p_val
                     
+                type_str = "BUY" if d.type == 0 else "SELL"
+                closed_deals_list.append({
+                    "ticket": d.ticket,
+                    "symbol": d.symbol,
+                    "type": type_str,
+                    "lots": round(d.volume, 2),
+                    "open_price": round(d.price, 5),
+                    "close_price": round(d.price, 5),
+                    "profit": round(d.profit, 2),
+                    "swap": round(d.swap, 2),
+                    "commission": round(d.commission, 2),
+                    "close_time": d_time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "close_timestamp": int(d.time),
+                    "comment": d.comment or "",
+                    "magic": d.magic
+                })
+        
+        recent_deals = closed_deals_list[-150:] if len(closed_deals_list) > 150 else closed_deals_list
+
+        # Write daily profit to database
+        if os.path.exists(DB_PATH) and daily_profit_map:
+            try:
+                conn = sqlite3.connect(DB_PATH)
+                c = conn.cursor()
+                for d_str, p_sum in daily_profit_map.items():
+                    c.execute("""
+                    INSERT INTO daily_history (login, date, profit, trades_count)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(login, date) DO UPDATE SET profit = excluded.profit
+                    """, (str(login), d_str, p_sum, 1))
+                conn.commit()
+                conn.close()
+            except Exception:
+                pass
+
         payload = {
             "login": login,
             "name": f"{acc.name} ({term_name})",
@@ -127,34 +173,57 @@ def sync_terminal(term_config):
             "yesterday_profit": round(yesterday_profit, 2),
             "weekly_profit": round(weekly_profit, 2),
             "monthly_profit": round(monthly_profit, 2),
-            "open_positions": pos_list
+            "open_positions": pos_list,
+            "closed_deals": recent_deals
         }
         
-        # Send to local dashboard server
         try:
-            r = requests.post(API_URL, json=payload, timeout=2)
+            r = requests.post(API_URL, json=payload, timeout=3)
             if r.status_code == 200:
-                print(f"[{time.strftime('%H:%M:%S')}] Synced {acc.name} (#{login}): Balance {balance:,.2f} | Equity {equity:,.2f} | Float {floating:+,.2f} | {len(pos_list)} Orders")
+                print(f"[{time.strftime('%H:%M:%S')}] OK: {acc.name} (#{login}) -> Bal: {balance:,.2f} | Float: {floating:+,.2f} | {len(pos_list)} Orders")
         except Exception as e:
-            print(f"⚠️ API Error: {e}")
+            print(f"[{time.strftime('%H:%M:%S')}] API Notice: Waiting for backend server...")
             
         return True
     finally:
         mt5.shutdown()
 
+def clean_old_demo_data():
+    if os.path.exists(DB_PATH):
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            c = conn.cursor()
+            demo_logins = ("8899201", "6644109", "3311902")
+            c.execute("DELETE FROM accounts WHERE login IN (?, ?, ?)", demo_logins)
+            c.execute("DELETE FROM snapshots WHERE login IN (?, ?, ?)", demo_logins)
+            c.execute("DELETE FROM daily_history WHERE login IN (?, ?, ?)", demo_logins)
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
 if __name__ == "__main__":
     print("=" * 60)
-    print("🚀 NEXUS QUANT PRO - REAL MT5 DATA SYNCHRONIZER")
+    print("🚀 NEXUS QUANT PRO - SMART MT5 AUTO-SYNC (VPS MODE)")
     print("=" * 60)
     clean_old_demo_data()
-    print("Connecting to live MT5 terminals and syncing...\n")
     
-    # Run loop
+    terms = discover_mt5_terminals()
+    print(f"🔍 Auto-discovered {len(terms)} MT5 Terminal(s) on this VPS:")
+    for t in terms:
+        print(f"  👉 [{t['name']}] {t['path']}")
+    print("-" * 60)
+    
+    if not terms:
+        print("⚠️ No MT5 found in standard directories. Please make sure MT5 is installed.")
+        
     while True:
-        for t in TERMINALS:
+        # Re-scan occasionally in case a new terminal was opened
+        terms = discover_mt5_terminals()
+        for t in terms:
             try:
                 sync_terminal(t)
             except Exception as ex:
-                print(f"Error syncing {t['name']}: {ex}")
+                pass
             time.sleep(1)
-        time.sleep(1)
+        time.sleep(2)
