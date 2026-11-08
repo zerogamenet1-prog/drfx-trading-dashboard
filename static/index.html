@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DRFX Live Trading Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #060b14;
+      --bg2: #0a1628;
+      --bg3: #0f2545;
+      --bg4: #050d1a;
+      --border: #132b4f;
+      --border-bright: #1f4277;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --green: #22c55e;
+      --green-glow: rgba(34, 197, 94, 0.15);
+      --red: #f87171;
+      --red-glow: rgba(248, 113, 113, 0.15);
+      --amber: #f59e0b;
+      --purple: #a855f7;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Sarabun', 'Inter', -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* HEADER */
+    header {
+      background: linear-gradient(180deg, #09172e 0%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(12px);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+    }
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-title span { color: var(--accent); }
+    .brand-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* STATUS BADGE */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      background: var(--bg2);
+      border: 1px solid var(--border);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--dim);
+    }
+    .status-badge.online .status-dot {
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulseDot 1.5s infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* CURRENCY TOGGLE */
+    .btn-group {
+      display: flex;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+    }
+    .btn-group button {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 5px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-group button.active {
+      background: var(--accent);
+      color: #031024;
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    }
+
+    .btn-action {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .btn-action:hover {
+      border-color: var(--accent);
+      background: var(--bg3);
+      color: var(--accent);
+    }
+    .btn-demo {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(168, 85, 247, 0.15));
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+
+    /* MAIN CONTAINER */
+    main {
+      flex: 1;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* SUMMARY CARDS ROW */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+    }
+    .scard {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .scard:hover {
+      border-color: var(--border-bright);
+      transform: translateY(-2px);
+    }
+    .scard-title {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .scard-val {
+      font-size: 1.45rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: -0.5px;
+    }
+    .scard-sub {
+      font-size: 0.72rem;
+      color: var(--dim);
+      margin-top: 6px;
+      font-family: var(--font-mono);
+    }
+
+    /* CARD COLORS */
+    .c-green { color: var(--green); }
+    .c-red { color: var(--red); }
+    .c-accent { color: var(--accent); }
+    .c-amber { color: var(--amber); }
+
+    /* SECTION HEADER */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-count {
+      background: var(--bg3);
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    /* ACCOUNTS GRID */
+    .accounts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 18px;
+    }
+    .acard {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .acard:hover {
+      border-color: var(--border-bright);
+      box-shadow: 0 6px 25px rgba(2, 132, 199, 0.15);
+    }
+
+    .acard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    .acard-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .acard-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 3px;
+      font-family: var(--font-mono);
+      display: flex;
+      gap: 8px;
+    }
+    .broker-tag {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+    }
+    .stat-label {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .stat-val {
+      font-family: var(--font-mono);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .progress-bar-bg {
+      height: 6px;
+      background: var(--bg3);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 4px 0 10px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0284c7, var(--green));
+      border-radius: 3px;
+    }
+
+    .acard-footer {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn-detail {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border-bright);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.82rem;
+      padding: 9px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-detail:hover {
+      background: var(--accent);
+      color: #031024;
+      font-weight: 700;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-box {
+      background: var(--bg2);
+      border: 1px solid var(--border-bright);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 950px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.96) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg4);
+    }
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+    }
+    .modal-close:hover { color: var(--red); }
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* CHARTS CONTAINER */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 820px) {
+      .charts-row { grid-template-columns: 1fr; }
+    }
+    .chart-box {
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .chart-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* POSITIONS TABLE */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg4);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      text-align: left;
+    }
+    th {
+      background: var(--bg3);
+      color: var(--muted);
+      padding: 10px 14px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(56, 189, 248, 0.03); }
+
+    .badge-buy {
+      background: var(--green-glow);
+      color: var(--green);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .badge-sell {
+      background: var(--red-glow);
+      color: var(--red);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--dim);
+      background: var(--bg4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: var(--bg2);
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      color: var(--muted);
+      grid-column: 1 / -1;
+    }
+    .empty-state h3 {
+      font-size: 1.2rem;
+      color: var(--text);
+      margin: 12px 0 6px;
+    }
+    .empty-state p {
+      max-width: 500px;
+      margin: 0 auto 20px;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div>
+        <div class="brand-title">DRFX <span>LIVE DASHBOARD</span></div>
+        <div class="brand-sub">Real-Time Performance Monitor</div>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <!-- Live WebSocket status -->
+      <div class="status-badge" id="wsStatus">
+        <div class="status-dot"></div>
+        <span id="wsStatusText">Connecting...</span>
+      </div>
+
+      <!-- Currency Switcher -->
+      <div class="btn-group">
+        <button id="btnUSD" class="active" onclick="setCurrency('USD')">USD ($)</button>
+        <button id="btnCENT" onclick="setCurrency('CENT')">CENT (¢)</button>
+        <button id="btnTHB" onclick="setCurrency('THB')">THB (฿)</button>
+      </div>
+
+      <!-- Demo Data Injection & Refresh -->
+      <button class="btn-action btn-demo" onclick="loadDemoData()">⚡ Load Demo</button>
+      <button class="btn-action" onclick="refreshData()">🔄 Refresh</button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+    <!-- PORTFOLIO SUMMARY CARDS -->
+    <div class="summary-grid">
+      <div class="scard">
+        <div class="scard-title">Total Balance <span>💰</span></div>
+        <div class="scard-val c-accent" id="totalBalance">$0.00</div>
+        <div class="scard-sub" id="totalBalanceSub">0 Accounts Connected</div>
+      </div>
+      <div class="scard">
+        <div class="scard-title">Total Equity <span>💎</span></div>
+        <div class="scard-val" id="totalEquity">$0.00</div>
+        <div class="scard-sub" id="totalEquitySub">Net Asset Value</div>
+      </div>
+      <div class="scard">
+        <div class="scard-title">Floating P/L <span>📊</span></div>
+        <div class="scard-val" id="totalFloating">$0.00</div>
+        <div class="scard-sub" id="floatingPercent">0.00%</div>
+      </div>
+      <div class="scard">
+        <div class="scard-title">Today's Profit <span>🚀</span></div>
+        <div class="scard-val" id="todayProfit">$0.00</div>
+        <div class="scard-sub" id="todayProfitSub">Daily Closed P/L</div>
+      </div>
+      <div class="scard">
+        <div class="scard-title">Yesterday Profit <span>📅</span></div>
+        <div class="scard-val" id="yesterdayProfit">$0.00</div>
+        <div class="scard-sub">Previous Day</div>
+      </div>
+      <div class="scard">
+        <div class="scard-title">Weekly Profit <span>📈</span></div>
+        <div class="scard-val" id="weeklyProfit">$0.00</div>
+        <div class="scard-sub">Current Week Total</div>
+      </div>
+      <div class="scard">
+        <div class="scard-title">Active Orders / Lots <span>⚡</span></div>
+        <div class="scard-val c-amber" id="totalOrdersLots">0 / 0.00</div>
+        <div class="scard-sub">Total Positions in Market</div>
+      </div>
+    </div>
+
+    <!-- ACCOUNTS SECTION -->
+    <div class="section-header">
+      <div class="section-title">
+        <span>⚡ Active Trading Ports</span>
+        <span class="badge-count" id="activePortsCount">0 Ports</span>
+      </div>
+    </div>
+
+    <div class="accounts-grid" id="accountsGrid">
+      <div class="empty-state">
+        <div style="font-size: 3rem;">📡</div>
+        <h3>ยังไม่มีบัญชีเชื่อมต่อเข้ามา</h3>
+        <p>นำไฟล์ EA <b>DRFX_WebReporter.mq5</b> ไปแนบที่กราฟใน MT5 หรือกดปุ่ม <b>⚡ Load Demo</b> ด้านบน เพื่อดูตัวอย่างการแสดงผลแบบเต็มรูปแบบทันทีครับ</p>
+        <button class="btn-action btn-demo" onclick="loadDemoData()">⚡ คลิกเพื่อโหลดข้อมูลตัวอย่าง (Demo Preview)</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL: ACCOUNT DETAIL VIEW -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span style="font-size: 1.4rem;">📊</span>
+          <div>
+            <div id="modalAccountName">Account Details</div>
+            <div id="modalAccountSub" style="font-size: 0.75rem; color: var(--muted); font-family: var(--font-mono); font-weight: normal;">Broker · Login</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- CHARTS ROW -->
+        <div class="charts-row">
+          <div class="chart-box">
+            <div class="chart-title">📈 Equity & Balance Growth Curve</div>
+            <div style="position: relative; height: 220px;">
+              <canvas id="growthChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-box">
+            <div class="chart-title">📊 14-Day Profit Breakdown</div>
+            <div style="position: relative; height: 220px;">
+              <canvas id="dailyBarChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- OPEN POSITIONS TABLE -->
+        <div>
+          <div class="section-title" style="margin-bottom: 10px; font-size: 0.95rem;">
+            <span>⚡ ออเดอร์ที่กำลังถืออยู่ (Live Open Positions)</span>
+            <span class="badge-count" id="modalPositionsCount">0 Orders</span>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ticket</th>
+                  <th>Symbol</th>
+                  <th>Type</th>
+                  <th>Lots</th>
+                  <th>Open Price</th>
+                  <th>Current Price</th>
+                  <th>SL / TP</th>
+                  <th>Floating P/L</th>
+                  <th>Comment</th>
+                </tr>
+              </thead>
+              <tbody id="positionsTableBody">
+                <tr><td colspan="9" style="text-align:center; color:var(--dim);">ไม่มีออเดอร์ค้างอยู่</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div>DRFX Bot Builders · Advanced Algorithmic Trading Ecosystem</div>
+    <div id="lastPingText" style="font-family: var(--font-mono);">System Time: --:--:--</div>
+  </footer>
+
+  <!-- SCRIPT -->
+  <script>
+    let currentCurrency = 'USD';
+    let usdThbRate = 34.65;
+    let ws = null;
+    let latestData = null;
+    let growthChartInstance = null;
+    let dailyChartInstance = null;
+
+    // Currency Formatter
+    function fmt(val, forceCurrency = null) {
+      if (val === undefined || val === null || isNaN(val)) return '$0.00';
+      const c = forceCurrency || currentCurrency;
+      if (c === 'THB') {
+        const thb = val * usdThbRate;
+        return '฿' + thb.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      } else if (c === 'CENT') {
+        const cent = val * 100;
+        return cent.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' ¢';
+      } else {
+        return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    }
+
+    function setCurrency(mode) {
+      currentCurrency = mode;
+      document.getElementById('btnUSD').classList.toggle('active', mode === 'USD');
+      document.getElementById('btnCENT').classList.toggle('active', mode === 'CENT');
+      document.getElementById('btnTHB').classList.toggle('active', mode === 'THB');
+      if (latestData) renderDashboard(latestData);
+    }
+
+    // Connect WebSocket
+    function connectWS() {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      const wsUrl = `${proto}://${location.host}/ws`;
+      
+      const badge = document.getElementById('wsStatus');
+      const text = document.getElementById('wsStatusText');
+
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        badge.className = 'status-badge online';
+        text.innerText = 'LIVE STREAMING';
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.portfolio) {
+            latestData = data;
+            renderDashboard(data);
+          }
+        } catch (e) {
+          console.error('Error parsing WS message:', e);
+        }
+      };
+
+      ws.onclose = () => {
+        badge.className = 'status-badge';
+        text.innerText = 'Reconnecting...';
+        setTimeout(connectWS, 3000);
+      };
+
+      ws.onerror = (err) => {
+        ws.close();
+      };
+    }
+
+    // Render Dashboard
+    function renderDashboard(data) {
+      if (!data || !data.portfolio) return;
+      const p = data.portfolio;
+
+      if (data.usdthb && data.usdthb.rate) {
+        usdThbRate = data.usdthb.rate;
+      }
+
+      // Summary Cards
+      document.getElementById('totalBalance').innerText = fmt(p.total_balance);
+      document.getElementById('totalBalanceSub').innerText = `${p.accounts_count} Ports Active`;
+      
+      document.getElementById('totalEquity').innerText = fmt(p.total_equity);
+
+      const fEl = document.getElementById('totalFloating');
+      fEl.innerText = (p.total_floating >= 0 ? '+' : '') + fmt(p.total_floating);
+      fEl.className = 'scard-val ' + (p.total_floating >= 0 ? 'c-green' : 'c-red');
+
+      const fPct = p.total_balance > 0 ? (p.total_floating / p.total_balance * 100) : 0;
+      document.getElementById('floatingPercent').innerText = `${fPct >= 0 ? '+' : ''}${fPct.toFixed(2)}% of Balance`;
+
+      const tdEl = document.getElementById('todayProfit');
+      tdEl.innerText = (p.today_profit >= 0 ? '+' : '') + fmt(p.today_profit);
+      tdEl.className = 'scard-val ' + (p.today_profit >= 0 ? 'c-green' : 'c-red');
+
+      const ydEl = document.getElementById('yesterdayProfit');
+      ydEl.innerText = (p.yesterday_profit >= 0 ? '+' : '') + fmt(p.yesterday_profit);
+      ydEl.className = 'scard-val ' + (p.yesterday_profit >= 0 ? 'c-green' : 'c-red');
+
+      const wkEl = document.getElementById('weeklyProfit');
+      wkEl.innerText = (p.weekly_profit >= 0 ? '+' : '') + fmt(p.weekly_profit);
+      wkEl.className = 'scard-val ' + (p.weekly_profit >= 0 ? 'c-green' : 'c-red');
+
+      document.getElementById('totalOrdersLots').innerText = `${p.total_open_orders} / ${p.total_lots.toFixed(2)} Lots`;
+      document.getElementById('activePortsCount').innerText = `${p.accounts_count} Ports`;
+
+      // Render Accounts Grid
+      const grid = document.getElementById('accountsGrid');
+      if (!p.accounts || p.accounts.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div style="font-size: 3rem;">📡</div>
+            <h3>ยังไม่มีบัญชีเชื่อมต่อเข้ามา</h3>
+            <p>นำไฟล์ EA <b>DRFX_WebReporter.mq5</b> ไปแนบที่กราฟใน MT5 หรือคลิกปุ่มด้านล่างเพื่อโหลด Demo</p>
+            <button class="btn-action btn-demo" onclick="loadDemoData()">⚡ คลิกเพื่อโหลดข้อมูลตัวอย่าง (Demo Preview)</button>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = p.accounts.map(acc => {
+        const floatSign = acc.floating >= 0 ? '+' : '';
+        const floatClass = acc.floating >= 0 ? 'c-green' : 'c-red';
+        const eqPercent = acc.balance > 0 ? Math.min(100, Math.max(0, (acc.equity / acc.balance) * 100)) : 100;
+        
+        return `
+          <div class="acard">
+            <div class="acard-header">
+              <div>
+                <div class="acard-name">${acc.name}</div>
+                <div class="acard-meta">
+                  <span class="broker-tag">${acc.broker}</span>
+                  <span>#${acc.login}</span>
+                </div>
+              </div>
+              <div class="status-badge ${acc.is_online ? 'online' : ''}" style="padding: 2px 8px; font-size: 0.7rem;">
+                <div class="status-dot"></div>
+                ${acc.is_online ? 'LIVE' : 'OFFLINE'}
+              </div>
+            </div>
+
+            <div>
+              <div class="stat-row">
+                <span class="stat-label">Balance</span>
+                <span class="stat-val">${fmt(acc.balance)}</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Equity</span>
+                <span class="stat-val c-accent">${fmt(acc.equity)}</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: ${eqPercent}%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="stat-row">
+                <span class="stat-label">Floating P/L</span>
+                <span class="stat-val ${floatClass}">${floatSign}${fmt(acc.floating)}</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Today's Profit</span>
+                <span class="stat-val ${acc.today_profit >= 0 ? 'c-green' : 'c-red'}">${acc.today_profit >= 0 ? '+' : ''}${fmt(acc.today_profit)}</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Max Drawdown</span>
+                <span class="stat-val ${acc.max_dd > 10 ? 'c-red' : 'c-amber'}">${acc.max_dd.toFixed(2)}%</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Active Orders</span>
+                <span class="stat-val">${acc.open_orders_count} Orders (${acc.total_lots.toFixed(2)} Lots)</span>
+              </div>
+            </div>
+
+            <div class="acard-footer">
+              <button class="btn-detail" onclick="openAccountDetail('${acc.login}')">
+                <span>📊</span> ดูรายละเอียด & ออเดอร์สด
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Load Demo Data
+    async function loadDemoData() {
+      try {
+        const res = await fetch('/api/mock-demo');
+        const d = await res.json();
+        refreshData();
+      } catch (e) {
+        alert('Failed to load demo: ' + e);
+      }
+    }
+
+    // Refresh Data
+    async function refreshData() {
+      try {
+        const res = await fetch('/api/snapshot');
+        const data = await res.json();
+        latestData = data;
+        renderDashboard(data);
+      } catch (e) {
+        console.error('Refresh error:', e);
+      }
+    }
+
+    // Account Detail Modal
+    async function openAccountDetail(login) {
+      try {
+        const res = await fetch(`/api/account/${login}/details`);
+        const data = await res.json();
+        
+        document.getElementById('modalAccountName').innerText = data.account.name;
+        document.getElementById('modalAccountSub').innerText = `${data.account.broker} · #${data.account.login} (${data.account.server})`;
+        document.getElementById('modalPositionsCount').innerText = `${data.positions.length} Orders`;
+
+        // Render Positions Table
+        const tb = document.getElementById('positionsTableBody');
+        if (data.positions.length === 0) {
+          tb.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--dim); padding: 24px;">ไม่มีออเดอร์ค้างอยู่ (No Open Orders)</td></tr>`;
+        } else {
+          tb.innerHTML = data.positions.map(p => {
+            const pClass = p.profit >= 0 ? 'c-green' : 'c-red';
+            const bClass = p.type.toUpperCase() === 'BUY' ? 'badge-buy' : 'badge-sell';
+            return `
+              <tr>
+                <td>#${p.ticket}</td>
+                <td style="font-weight:700;">${p.symbol}</td>
+                <td><span class="${bClass}">${p.type}</span></td>
+                <td>${p.lots.toFixed(2)}</td>
+                <td>${p.open_price}</td>
+                <td>${p.current_price}</td>
+                <td style="color:var(--dim);">${p.sl || '-'} / ${p.tp || '-'}</td>
+                <td class="${pClass}" style="font-weight:700;">${p.profit >= 0 ? '+' : ''}${fmt(p.profit)}</td>
+                <td style="color:var(--muted);">${p.comment || '-'}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // Render Charts
+        renderCharts(data.snapshots, data.daily_stats);
+
+        document.getElementById('detailModal').classList.add('active');
+      } catch (e) {
+        alert('Error loading account detail: ' + e);
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('detailModal').classList.remove('active');
+    }
+
+    function renderCharts(snapshots, dailyStats) {
+      // Growth Curve
+      const ctxGrowth = document.getElementById('growthChart').getContext('2d');
+      if (growthChartInstance) growthChartInstance.destroy();
+
+      const labels = snapshots.map(s => {
+        const d = new Date(s.timestamp * 1000);
+        return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+      });
+      const balances = snapshots.map(s => s.balance);
+      const equities = snapshots.map(s => s.equity);
+
+      growthChartInstance = new Chart(ctxGrowth, {
+        type: 'line',
+        data: {
+          labels: labels.length ? labels : ['Start', 'Current'],
+          datasets: [
+            {
+              label: 'Equity',
+              data: equities.length ? equities : [10000, 10200],
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.08)',
+              fill: true,
+              tension: 0.2,
+              borderWidth: 2,
+              pointRadius: 1
+            },
+            {
+              label: 'Balance',
+              data: balances.length ? balances : [10000, 10000],
+              borderColor: '#94a3b8',
+              borderDash: [4, 4],
+              fill: false,
+              tension: 0.1,
+              borderWidth: 1.5,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#94a3b8' } } },
+          scales: {
+            x: { ticks: { color: '#64748b', maxTicksLimit: 6 }, grid: { color: '#132b4f' } },
+            y: { ticks: { color: '#64748b' }, grid: { color: '#132b4f' } }
+          }
+        }
+      });
+
+      // Daily Bar Chart
+      const ctxDaily = document.getElementById('dailyBarChart').getContext('2d');
+      if (dailyChartInstance) dailyChartInstance.destroy();
+
+      const dLabels = dailyStats.map(s => s.date.slice(5)); // MM-DD
+      const dProfits = dailyStats.map(s => s.profit);
+      const dColors = dProfits.map(v => v >= 0 ? '#22c55e' : '#f87171');
+
+      dailyChartInstance = new Chart(ctxDaily, {
+        type: 'bar',
+        data: {
+          labels: dLabels.length ? dLabels : ['Day 1', 'Day 2'],
+          datasets: [{
+            label: 'Daily Profit',
+            data: dProfits.length ? dProfits : [50, -20],
+            backgroundColor: dColors.length ? dColors : ['#22c55e', '#f87171'],
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#64748b', maxTicksLimit: 7 }, grid: { display: false } },
+            y: { ticks: { color: '#64748b' }, grid: { color: '#132b4f' } }
+          }
+        }
+      });
+    }
+
+    // Clock
+    setInterval(() => {
+      document.getElementById('lastPingText').innerText = 'Local Time: ' + new Date().toLocaleTimeString('th-TH');
+    }, 1000);
+
+    // Initial Start
+    connectWS();
+    refreshData();
+  </script>
+</body>
+</html>
+
