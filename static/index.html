@@ -667,7 +667,102 @@
     }
     .modal-close:hover { color: var(--red); }
 
-    /* ADMIN FORM STYLES */
+    /* ADMIN FORM STYLES & REVAMP */
+    .admin-login-card {
+      max-width: 440px;
+      margin: 24px auto;
+      text-align: center;
+      background: rgba(13, 20, 36, 0.75);
+      border: 1px solid rgba(0, 240, 255, 0.22);
+      border-radius: 16px;
+      padding: 34px 28px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.6);
+      backdrop-filter: blur(10px);
+    }
+    .admin-shield-icon {
+      width: 68px;
+      height: 68px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.3rem;
+      background: radial-gradient(circle, rgba(0,240,255,0.18) 0%, transparent 70%);
+      border: 1px solid rgba(0,240,255,0.35);
+      border-radius: 50%;
+      box-shadow: 0 0 20px rgba(0,240,255,0.25);
+      animation: pulseGlow 2.5s infinite ease-in-out;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(0,240,255,0.2); transform: scale(1); }
+      50% { box-shadow: 0 0 25px rgba(0,240,255,0.5); transform: scale(1.04); }
+    }
+    .pw-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      width: 100%;
+    }
+    .pw-input-wrapper input {
+      width: 100%;
+      padding-right: 44px;
+      font-size: 0.95rem;
+    }
+    .pw-toggle-btn {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.15rem;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pw-toggle-btn:hover { color: var(--accent); }
+    .shake-anim {
+      animation: shake 0.4s ease-in-out;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .admin-subtab-btn {
+      padding: 9px 18px;
+      border-radius: 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .admin-subtab-btn:hover {
+      color: var(--text);
+      border-color: var(--border-bright);
+    }
+    .admin-subtab-btn.active {
+      background: rgba(0,240,255,0.12);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .admin-badge-active {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      background: rgba(0, 230, 118, 0.15);
+      border: 1px solid rgba(0, 230, 118, 0.3);
+      border-radius: 20px;
+      color: var(--green);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
     .form-group {
       display: flex;
       flex-direction: column;
@@ -694,9 +789,13 @@
     .admin-account-card {
       background: var(--bg3);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px;
+      border-radius: 12px;
+      padding: 18px;
       margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .admin-account-card:hover {
+      border-color: var(--border-bright);
     }
 
     /* FOOTER */
@@ -998,97 +1097,204 @@
 
   <!-- MODAL: ADMIN BACKOFFICE PANEL -->
   <div class="modal-overlay" id="adminModal">
-    <div class="modal-box" style="max-width: 850px;">
+    <div class="modal-box" style="max-width: 920px;">
+      <!-- MODAL HEADER -->
       <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.3rem;">⚙️</span>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="font-size: 1.4rem;">⚙️</div>
           <div>
-            <div style="font-size: 1.15rem; font-weight: 700; color: var(--amber);">NEXUS Admin Backoffice</div>
-            <div style="font-size: 0.72rem; color: var(--muted);">แผงควบคุมและปรับแต่งการแสดงผลหลังบ้าน</div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: var(--amber); display: flex; align-items: center; gap: 8px;">
+              <span>NEXUS Admin Backoffice</span>
+              <span id="adminAuthBadge" class="admin-badge-active" style="display: none;">
+                <span class="status-dot online" style="width: 6px; height: 6px;"></span>
+                AUTHENTICATED
+              </span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--muted);">ศูนย์ควบคุมระบบหลังบ้าน ปรับแต่งการแสดงผลพอร์ต และความปลอดภัย</div>
           </div>
         </div>
-        <button class="modal-close" onclick="closeAdminModal()">&times;</button>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button id="adminLogoutBtn" class="btn-tool" style="display: none; color: var(--red); border-color: rgba(255,82,82,0.35); font-size: 0.76rem; padding: 5px 12px; font-weight: 600;" onclick="adminLogout()">
+            🚪 ออกจากระบบ
+          </button>
+          <button class="modal-close" onclick="closeAdminModal()">&times;</button>
+        </div>
       </div>
 
       <div class="modal-body" id="adminModalBody">
-        <!-- LOGIN VIEW (IF NOT AUTHED) -->
-        <div id="adminLoginView" style="max-width: 400px; margin: 30px auto; text-align: center;">
-          <div style="font-size: 2.5rem; margin-bottom: 12px;">🔒</div>
-          <h3 style="margin-bottom: 8px;">เข้าสู่ระบบ Admin</h3>
-          <p style="font-size: 0.82rem; color: var(--muted); margin-bottom: 20px;">กรอกรหัสผ่านเพื่อเข้าใช้งานระบบจัดการหลังบ้าน (รหัสเริ่มต้น: <b>admin1234</b>)</p>
-          <div class="form-group">
-            <input type="password" id="adminPasswordInput" class="form-input" placeholder="กรอกรหัสผ่าน..." style="text-align: center;">
+        <!-- 1. LOGIN VIEW (WHEN NOT AUTHED) -->
+        <div id="adminLoginView" class="admin-login-card">
+          <div class="admin-shield-icon">🛡️</div>
+          <h3 style="margin-bottom: 6px; font-size: 1.25rem;">เข้าสู่ระบบ Admin</h3>
+          <p style="font-size: 0.82rem; color: var(--muted); margin-bottom: 22px; line-height: 1.5;">
+            กรุณากรอกรหัสผ่านเพื่อเข้าใช้งานระบบควบคุมและปรับแต่งหลังบ้าน<br>
+            <span style="font-size: 0.74rem; color: var(--dim);">Protected Management Gateway</span>
+          </p>
+
+          <form onsubmit="event.preventDefault(); submitAdminLogin();" style="max-width: 320px; margin: 0 auto;">
+            <div class="pw-input-wrapper">
+              <input type="password" id="adminPasswordInput" class="form-input" placeholder="กรอกรหัสผ่าน..." autocomplete="current-password" autofocus>
+              <button type="button" class="pw-toggle-btn" onclick="togglePasswordVisibility('adminPasswordInput', 'pwToggleIcon')" title="แสดง/ซ่อนรหัสผ่าน">
+                <span id="pwToggleIcon">👁️</span>
+              </button>
+            </div>
+            
+            <button type="submit" id="btnAdminSubmitLogin" class="btn-detail" style="width: 100%; background: linear-gradient(135deg, #ff9100, #ff6d00); color: #030a16; font-weight: 800; font-size: 0.92rem; padding: 12px; border-radius: 8px; margin-top: 6px;">
+              🔓 เข้าสู่ระบบผู้ดูแล
+            </button>
+          </form>
+
+          <div id="adminLoginErr" style="color: var(--red); font-size: 0.82rem; margin-top: 14px; display: none; background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.3); padding: 8px 12px; border-radius: 6px;">
+            ❌ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง
           </div>
-          <button class="btn-detail" style="background: var(--amber); color: #030a16; font-weight: 700; padding: 10px;" onclick="submitAdminLogin()">
-            🔓 ล็อกอินเข้าสู่ระบบ
-          </button>
-          <div id="adminLoginErr" style="color: var(--red); font-size: 0.8rem; margin-top: 10px; display: none;">รหัสผ่านไม่ถูกต้อง</div>
         </div>
 
-        <!-- DASHBOARD VIEW (WHEN AUTHED) -->
+        <!-- 2. DASHBOARD VIEW (WHEN AUTHED) -->
         <div id="adminDashboardView" style="display: none; flex-direction: column; gap: 20px;">
-          <div class="btn-group" style="align-self: flex-start;">
-            <button id="btnAdminTabAcc" class="active" onclick="switchAdminTab('acc')">🎛️ จัดการรายพอร์ต</button>
-            <button id="btnAdminTabGlobal" onclick="switchAdminTab('global')">🌐 ตั้งค่าระบบส่วนกลาง</button>
+          <!-- Subtabs Bar -->
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+            <button id="btnAdminTabAcc" class="admin-subtab-btn active" onclick="switchAdminTab('acc')">
+              🎛️ จัดการรายพอร์ต MT5
+            </button>
+            <button id="btnAdminTabGlobal" class="admin-subtab-btn" onclick="switchAdminTab('global')">
+              🌐 ข้อมูลเว็บ & แบรนด์ดิ้ง
+            </button>
+            <button id="btnAdminTabSecurity" class="admin-subtab-btn" onclick="switchAdminTab('security')">
+              🔐 เปลี่ยนรหัสผ่าน Admin
+            </button>
+            <button id="btnAdminTabTools" class="admin-subtab-btn" onclick="switchAdminTab('tools')">
+              ⚡ เครื่องมือ & ล้างแคช
+            </button>
           </div>
 
-          <!-- SUBTAB A: ACCOUNT SETTINGS -->
+          <!-- SUBTAB 1: ACCOUNTS SETTINGS -->
           <div id="adminSubtabAcc" style="display: flex; flex-direction: column; gap: 14px;">
-            <p style="font-size: 0.82rem; color: var(--muted);">
-              💡 <b>สำคัญ:</b> คุณสามารถปรับแก้หน่วยเงินของพอร์ต (CENT / USD), เปลี่ยนชื่อพอร์ต, ใส่ป้ายกำกับ, หรือซ่อนพอร์ตได้ที่นี่
-            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,240,255,0.05); border: 1px solid rgba(0,240,255,0.15); border-radius: 10px; padding: 12px 16px;">
+              <div>
+                <b style="color: var(--accent); font-size: 0.88rem;">💡 คำแนะนำการจัดการพอร์ต:</b>
+                <div style="font-size: 0.78rem; color: var(--muted); margin-top: 3px;">
+                  สามารถปรับแยกประเภทหน่วย <b>CENT (หาร 100)</b> หรือ <b>USD</b>, เปลี่ยนชื่อเรียก, ซ่อนพอร์ตจากผู้ชมภายนอก, และใส่ลิงก์ CopyTrade ได้อิสระ
+                </div>
+              </div>
+              <button class="btn-tool" onclick="showAdminDashboard()" title="รีเฟรชข้อมูลพอร์ต">🔄 รีเฟรช</button>
+            </div>
             <div id="adminAccountsList"></div>
           </div>
 
-          <!-- SUBTAB B: GLOBAL SETTINGS -->
-          <div id="adminSubtabGlobal" style="display: none; flex-direction: column; gap: 14px;">
-            <div class="scard" style="padding: 16px;">
-              <h4 style="margin-bottom: 12px; color: var(--accent);">🌐 ข้อมูลส่วนหัวและหน้าเว็บ</h4>
-              <div class="form-group">
-                <label class="form-label">ชื่อหัวเว็บ (Site Title):</label>
-                <input type="text" id="cfgSiteTitle" class="form-input">
+          <!-- SUBTAB 2: GLOBAL & BRANDING -->
+          <div id="adminSubtabGlobal" style="display: none; flex-direction: column; gap: 16px;">
+            <div class="scard" style="padding: 18px;">
+              <h4 style="margin-bottom: 14px; color: var(--accent); display: flex; align-items: center; gap: 8px;">
+                <span>🌐</span> ข้อมูลส่วนหัวและหน้าเว็บ (Branding)
+              </h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div class="form-group">
+                  <label class="form-label">ชื่อหัวเว็บหลัก (Site Title):</label>
+                  <input type="text" id="cfgSiteTitle" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">คำบรรยายหัวเว็บ (Subtitle):</label>
+                  <input type="text" id="cfgSiteSubtitle" class="form-input">
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">คำบรรยายหัวเว็บ (Subtitle):</label>
-                <input type="text" id="cfgSiteSubtitle" class="form-input">
-              </div>
-              <div class="form-group">
-                <label class="form-label">อัตราแลกเปลี่ยน USD / THB (บาท):</label>
-                <input type="number" step="0.05" id="cfgUsdThb" class="form-input">
-              </div>
-              <div class="form-group">
-                <label class="form-label">แถบข้อความประกาศวิ่งหัวเว็บ (Announcement):</label>
-                <input type="text" id="cfgAnnouncement" class="form-input" placeholder="เช่น 🔥 อัปเดต EA V15 กำไรทะลุเป้า...">
-              </div>
-            </div>
-
-            <div class="scard" style="padding: 16px;">
-              <h4 style="margin-bottom: 12px; color: var(--accent);">📞 ช่องทางการติดต่อ (Contact Links)</h4>
-              <div class="form-group">
-                <label class="form-label">LINE Official / OpenChat:</label>
-                <input type="text" id="cfgContactLine" class="form-input" placeholder="@Drfx">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Telegram Channel / User:</label>
-                <input type="text" id="cfgContactTelegram" class="form-input" placeholder="@drfx_algo">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Facebook Page / Link:</label>
-                <input type="text" id="cfgContactFb" class="form-input" placeholder="drfxtrading">
+              <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 14px;">
+                <div class="form-group">
+                  <label class="form-label">อัตราแลกเปลี่ยน USD / THB (บาท):</label>
+                  <input type="number" step="0.05" id="cfgUsdThb" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">แถบข้อความประกาศวิ่งหัวเว็บ (Announcement):</label>
+                  <input type="text" id="cfgAnnouncement" class="form-input" placeholder="เช่น 🔥 อัปเดตบอทรุ่นใหม่ กำไรต่อเนื่อง...">
+                </div>
               </div>
             </div>
 
-            <div class="scard" style="padding: 16px;">
-              <h4 style="margin-bottom: 12px; color: var(--red);">🔒 เปลี่ยนรหัสผ่าน Admin</h4>
-              <div class="form-group">
-                <label class="form-label">รหัสผ่านใหม่ (หากไม่ต้องการเปลี่ยนให้เว้นว่างไว้):</label>
-                <input type="password" id="cfgNewPassword" class="form-input" placeholder="กรอกรหัสผ่านใหม่...">
+            <div class="scard" style="padding: 18px;">
+              <h4 style="margin-bottom: 14px; color: var(--green); display: flex; align-items: center; gap: 8px;">
+                <span>📞</span> ลิงก์และช่องทางการติดต่อ (Social Community)
+              </h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+                <div class="form-group">
+                  <label class="form-label">LINE Official / OpenChat:</label>
+                  <input type="text" id="cfgContactLine" class="form-input" placeholder="@Drfx">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Telegram Channel / User:</label>
+                  <input type="text" id="cfgContactTelegram" class="form-input" placeholder="@drfx_algo">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Facebook Page / Link:</label>
+                  <input type="text" id="cfgContactFb" class="form-input" placeholder="drfxtrading">
+                </div>
               </div>
             </div>
 
-            <button class="btn-detail" style="background: var(--amber); color: #030a16; font-weight: 700; padding: 12px;" onclick="saveGlobalSettings()">
+            <button class="btn-detail" style="background: var(--amber); color: #030a16; font-weight: 800; padding: 12px; font-size: 0.92rem; border-radius: 8px;" onclick="saveGlobalSettings()">
               💾 บันทึกการตั้งค่าระบบส่วนกลาง
             </button>
+          </div>
+
+          <!-- SUBTAB 3: SECURITY & PASSWORD -->
+          <div id="adminSubtabSecurity" style="display: none; flex-direction: column; gap: 16px;">
+            <div class="scard" style="padding: 20px; border-color: rgba(255, 171, 0, 0.3);">
+              <h4 style="margin-bottom: 10px; color: var(--amber); display: flex; align-items: center; gap: 8px;">
+                <span>🔐</span> เปลี่ยนรหัสผ่าน Admin (Change Password)
+              </h4>
+              <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 18px;">
+                รหัสผ่านที่ตั้งใหม่จะถูกบันทึกไว้อย่างปลอดภัยในฐานข้อมูล และ<b>ไม่มีการแสดงรหัสผ่านในหน้าเว็บหรือจุดใดๆ ทั้งสิ้น</b>
+              </p>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                  <label class="form-label">รหัสผ่านใหม่ (New Password):</label>
+                  <div class="pw-input-wrapper">
+                    <input type="password" id="cfgNewPassword" class="form-input" placeholder="กรอกรหัสผ่านใหม่..." style="text-align: left;">
+                    <button type="button" class="pw-toggle-btn" onclick="togglePasswordVisibility('cfgNewPassword', 'pwIconNew')">
+                      <span id="pwIconNew">👁️</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">ยืนยันรหัสผ่านใหม่อีกครั้ง (Confirm Password):</label>
+                  <div class="pw-input-wrapper">
+                    <input type="password" id="cfgConfirmPassword" class="form-input" placeholder="ยืนยันรหัสผ่านใหม่อีกครั้ง..." style="text-align: left;">
+                    <button type="button" class="pw-toggle-btn" onclick="togglePasswordVisibility('cfgConfirmPassword', 'pwIconConf')">
+                      <span id="pwIconConf">👁️</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="adminPwMsg" style="display: none; font-size: 0.82rem; padding: 8px 12px; border-radius: 6px; margin-bottom: 14px;"></div>
+
+              <button class="btn-detail" style="background: linear-gradient(135deg, #00e676, #00b0ff); color: #030a16; font-weight: 800; padding: 12px 24px; font-size: 0.9rem;" onclick="changeAdminPassword()">
+                🔑 ยืนยันเปลี่ยนรหัสผ่านใหม่
+              </button>
+            </div>
+          </div>
+
+          <!-- SUBTAB 4: SYSTEM & TELEMETRY TOOLS -->
+          <div id="adminSubtabTools" style="display: none; flex-direction: column; gap: 16px;">
+            <div class="scard" style="padding: 18px;">
+              <h4 style="margin-bottom: 12px; color: var(--accent);">📡 Webhook URL สำหรับใส่ใน EA</h4>
+              <p style="font-size: 0.82rem; color: var(--muted); margin-bottom: 12px;">
+                สามารถนำ URL นี้ไปใส่ในช่อง WebRequest ของ MT5 เพื่อส่งข้อมูล Telemetry ตรงเข้ามา:
+              </p>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="adminWebhookUrl" class="form-input" style="flex: 1; font-family: var(--font-mono);" readonly>
+                <button class="btn-tool" onclick="copyAdminWebhook()">📋 Copy URL</button>
+              </div>
+            </div>
+
+            <div class="scard" style="padding: 18px; border-color: rgba(255, 82, 82, 0.25);">
+              <h4 style="margin-bottom: 10px; color: var(--red);">🧹 ล้างข้อมูลขยะและพอร์ต Demo เก่า</h4>
+              <p style="font-size: 0.82rem; color: var(--muted); margin-bottom: 14px;">
+                หากมีพอร์ต Demo ตัวอย่างที่ติดมาในระบบ สามารถกดปุ่มนี้เพื่อล้างข้อมูลทดสอบออกทั้งหมด โดยไม่กระทบพอร์ตจริงของคุณ
+              </p>
+              <button class="btn-tool" style="background: rgba(255,82,82,0.12); color: var(--red); border-color: var(--red); font-weight: 700; padding: 10px 18px;" onclick="cleanDemoData()">
+                🗑️ ล้างพอร์ต Demo ทดสอบทั้งหมด
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1653,8 +1859,23 @@
     }
 
     // ─────────────────────────────────────────────────────────────
-    // ADMIN BACKOFFICE LOGIC
+    // ADMIN BACKOFFICE LOGIC & SECURITY
     // ─────────────────────────────────────────────────────────────
+    let isAdminAuthed = sessionStorage.getItem('nexus_admin_authed') === 'true';
+
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) icon.innerText = '🙈';
+      } else {
+        input.type = 'password';
+        if (icon) icon.innerText = '👁️';
+      }
+    }
+
     function openAdminModal() {
       document.getElementById('adminModal').classList.add('active');
       if (isAdminAuthed) {
@@ -1662,6 +1883,12 @@
       } else {
         document.getElementById('adminLoginView').style.display = 'block';
         document.getElementById('adminDashboardView').style.display = 'none';
+        document.getElementById('adminAuthBadge').style.display = 'none';
+        document.getElementById('adminLogoutBtn').style.display = 'none';
+        setTimeout(() => {
+          const input = document.getElementById('adminPasswordInput');
+          if (input) { input.value = ''; input.focus(); }
+        }, 150);
       }
     }
 
@@ -1669,10 +1896,32 @@
       document.getElementById('adminModal').classList.remove('active');
     }
 
+    function adminLogout() {
+      isAdminAuthed = false;
+      sessionStorage.removeItem('nexus_admin_authed');
+      document.getElementById('adminLoginView').style.display = 'block';
+      document.getElementById('adminDashboardView').style.display = 'none';
+      document.getElementById('adminAuthBadge').style.display = 'none';
+      document.getElementById('adminLogoutBtn').style.display = 'none';
+      const input = document.getElementById('adminPasswordInput');
+      if (input) { input.value = ''; input.type = 'password'; }
+      const err = document.getElementById('adminLoginErr');
+      if (err) err.style.display = 'none';
+    }
+
     async function submitAdminLogin() {
-      const pw = document.getElementById('adminPasswordInput').value;
+      const input = document.getElementById('adminPasswordInput');
+      const pw = (input.value || '').trim();
       const errEl = document.getElementById('adminLoginErr');
+      const card = document.getElementById('adminLoginView');
       errEl.style.display = 'none';
+
+      if (!pw) {
+        errEl.innerText = '❌ กรุณากรอกรหัสผ่านก่อนเข้าสู่ระบบ';
+        errEl.style.display = 'block';
+        return;
+      }
+
       try {
         const res = await fetch('/api/admin/login', {
           method: 'POST',
@@ -1681,9 +1930,16 @@
         });
         if (res.ok) {
           isAdminAuthed = true;
+          sessionStorage.setItem('nexus_admin_authed', 'true');
+          playChime(true);
           showAdminDashboard();
         } else {
+          errEl.innerText = '❌ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
           errEl.style.display = 'block';
+          card.classList.remove('shake-anim');
+          void card.offsetWidth; // trigger reflow
+          card.classList.add('shake-anim');
+          input.select();
         }
       } catch (e) {
         alert('Login failed: ' + e);
@@ -1693,13 +1949,25 @@
     function switchAdminTab(t) {
       document.getElementById('btnAdminTabAcc').classList.toggle('active', t === 'acc');
       document.getElementById('btnAdminTabGlobal').classList.toggle('active', t === 'global');
+      document.getElementById('btnAdminTabSecurity').classList.toggle('active', t === 'security');
+      document.getElementById('btnAdminTabTools').classList.toggle('active', t === 'tools');
+
       document.getElementById('adminSubtabAcc').style.display = t === 'acc' ? 'flex' : 'none';
       document.getElementById('adminSubtabGlobal').style.display = t === 'global' ? 'flex' : 'none';
+      document.getElementById('adminSubtabSecurity').style.display = t === 'security' ? 'flex' : 'none';
+      document.getElementById('adminSubtabTools').style.display = t === 'tools' ? 'flex' : 'none';
+
+      if (t === 'tools') {
+        const origin = window.location.origin;
+        document.getElementById('adminWebhookUrl').value = `${origin}/api/report`;
+      }
     }
 
     async function showAdminDashboard() {
       document.getElementById('adminLoginView').style.display = 'none';
       document.getElementById('adminDashboardView').style.display = 'flex';
+      document.getElementById('adminAuthBadge').style.display = 'inline-flex';
+      document.getElementById('adminLogoutBtn').style.display = 'inline-block';
       
       try {
         const res = await fetch('/api/admin/settings');
@@ -1718,47 +1986,55 @@
         // Populate Accounts List
         const list = document.getElementById('adminAccountsList');
         if (!data.accounts || data.accounts.length === 0) {
-          list.innerHTML = `<div style="text-align:center; color:var(--dim); padding:20px;">ไม่พบบัญชี MT5 ในระบบ</div>`;
+          list.innerHTML = `
+            <div style="text-align:center; color:var(--dim); padding:40px 20px; background:var(--bg3); border-radius:12px; border:1px dashed var(--border);">
+              <div style="font-size:2rem; margin-bottom:8px;">📡</div>
+              <div style="font-weight:600; color:var(--muted);">ยังไม่พบพอร์ต MT5 ในระบบ</div>
+              <div style="font-size:0.8rem; color:var(--dim); margin-top:4px;">เปิดโปรแกรม MT5 บนเครื่อง VPS เพื่อให้ระบบตรวจจับและส่งข้อมูลเข้ามาอัตโนมัติ</div>
+            </div>`;
           return;
         }
 
         list.innerHTML = data.accounts.map(a => `
           <div class="admin-account-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
               <div>
-                <b style="font-size:1rem; color:var(--accent);">#${a.login}</b> 
-                <span style="font-size:0.8rem; color:var(--muted);">(${a.broker} · ${a.server})</span>
+                <b style="font-size:1.05rem; color:var(--accent);">#${a.login}</b> 
+                <span style="font-size:0.82rem; color:var(--muted); margin-left:6px;">(${a.broker} · ${a.server})</span>
+                <span class="${a.account_type === 'CENT' ? 'badge-cent' : 'badge-usd'}" style="margin-left:8px;">
+                  ${a.account_type === 'CENT' ? 'CENT ¢' : 'USD $'}
+                </span>
               </div>
-              <button class="btn-tool" style="color:var(--red); border-color:var(--red); padding:4px 8px; font-size:0.75rem;" onclick="deleteAdminAccount('${a.login}')">
+              <button class="btn-tool" style="color:var(--red); border-color:rgba(255,82,82,0.4); padding:4px 10px; font-size:0.75rem;" onclick="deleteAdminAccount('${a.login}')">
                 🗑️ ลบพอร์ตนี้
               </button>
             </div>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
               <div class="form-group">
-                <label class="form-label">ประเภทหน่วยเงิน (Currency Type):</label>
+                <label class="form-label">ประเภทหน่วยเงิน (Currency Unit):</label>
                 <select id="accType_${a.login}" class="form-input">
-                  <option value="AUTO" ${a.account_type === 'AUTO' ? 'selected' : ''}>🔍 AUTO (ตรวจหาอัตโนมัติ)</option>
-                  <option value="CENT" ${a.account_type === 'CENT' ? 'selected' : ''}>¢ CENT (บัญชีเซ็นต์ - หาร 100)</option>
+                  <option value="AUTO" ${a.account_type === 'AUTO' ? 'selected' : ''}>🔍 AUTO (ตรวจหาอัตโนมัติจาก MT5)</option>
+                  <option value="CENT" ${a.account_type === 'CENT' ? 'selected' : ''}>¢ CENT (บัญชีเซนต์ - แปลงเป็น USD หาร 100)</option>
                   <option value="USD" ${a.account_type === 'USD' ? 'selected' : ''}>$ USD (บัญชีดอลลาร์ปกติ)</option>
                 </select>
               </div>
 
               <div class="form-group">
-                <label class="form-label">ชื่อพอร์ตที่แสดง (Custom Display Name):</label>
-                <input type="text" id="accName_${a.login}" class="form-input" value="${a.custom_name || a.name || ''}" placeholder="เช่น DRFX Gold Hunter">
+                <label class="form-label">ชื่อพอร์ตแสดงผล (Custom Display Name):</label>
+                <input type="text" id="accName_${a.login}" class="form-input" value="${a.custom_name || a.name || ''}" placeholder="เช่น NEXUS Gold Scalper">
               </div>
 
               <div class="form-group">
-                <label class="form-label">ป้ายกำกับ (Badge Label):</label>
-                <input type="text" id="accBadge_${a.login}" class="form-input" value="${a.badge_text || ''}" placeholder="เช่น Low Risk, Grid, Scalper">
+                <label class="form-label">ป้ายกำกับพิเศษ (Badge Label):</label>
+                <input type="text" id="accBadge_${a.login}" class="form-input" value="${a.badge_text || ''}" placeholder="เช่น PRO GRID, HEDGING, VIP">
               </div>
 
               <div class="form-group">
-                <label class="form-label">การแสดงผลสู่สาธารณะ:</label>
+                <label class="form-label">สถานะการแสดงผล (Public Visibility):</label>
                 <select id="accHidden_${a.login}" class="form-input">
-                  <option value="0" ${a.is_hidden == 0 ? 'selected' : ''}>👁️ แสดงบนหน้าเว็บปกติ</option>
-                  <option value="1" ${a.is_hidden == 1 ? 'selected' : ''}>🔒 ซ่อนจากสาธารณะ (แอดมินเห็นคนเดียว)</option>
+                  <option value="0" ${a.is_hidden == 0 ? 'selected' : ''}>👁️ แสดงบนหน้าเว็บสู่สาธารณะ</option>
+                  <option value="1" ${a.is_hidden == 1 ? 'selected' : ''}>🔒 ซ่อนพอร์ต (เฉพาะแอดมินเห็นเท่านั้น)</option>
                 </select>
               </div>
 
@@ -1773,9 +2049,11 @@
               </div>
             </div>
 
-            <button class="btn-detail" style="background:var(--accent); color:#030a16; font-weight:700; padding:8px 16px; margin-top:8px;" onclick="saveAccountSetting('${a.login}')">
-              💾 บันทึกการตั้งค่าพอร์ตนี้
-            </button>
+            <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+              <button class="btn-detail" style="background:var(--accent); color:#030a16; font-weight:800; padding:8px 20px; font-size:0.85rem;" onclick="saveAccountSetting('${a.login}')">
+                💾 บันทึกการตั้งค่าพอร์ตนี้
+              </button>
+            </div>
           </div>
         `).join('');
       } catch (e) {
@@ -1800,7 +2078,8 @@
           body: JSON.stringify(payload)
         });
         if (res.ok) {
-          alert(`✅ บันทึกการตั้งค่าพอร์ต #${login} สำเร็จแล้ว!`);
+          playChime(true);
+          alert(`✅ บันทึกการตั้งค่าพอร์ต #${login} เรียบร้อยแล้ว!`);
           fetch('/api/snapshot').then(r => r.json()).then(d => { latestData = d; renderDashboard(d); });
         }
       } catch (e) {
@@ -1816,8 +2095,7 @@
         announcement: document.getElementById('cfgAnnouncement').value,
         contact_line: document.getElementById('cfgContactLine').value,
         contact_telegram: document.getElementById('cfgContactTelegram').value,
-        contact_facebook: document.getElementById('cfgContactFb').value,
-        new_password: document.getElementById('cfgNewPassword').value || null
+        contact_facebook: document.getElementById('cfgContactFb').value
       };
       try {
         const res = await fetch('/api/admin/global', {
@@ -1826,8 +2104,8 @@
           body: JSON.stringify(payload)
         });
         if (res.ok) {
+          playChime(true);
           alert('✅ บันทึกการตั้งค่าระบบส่วนกลางสำเร็จเรียบร้อย!');
-          document.getElementById('cfgNewPassword').value = '';
           fetch('/api/snapshot').then(r => r.json()).then(d => { latestData = d; renderDashboard(d); });
         }
       } catch (e) {
@@ -1835,11 +2113,88 @@
       }
     }
 
+    async function changeAdminPassword() {
+      const np = (document.getElementById('cfgNewPassword').value || '').trim();
+      const cp = (document.getElementById('cfgConfirmPassword').value || '').trim();
+      const msg = document.getElementById('adminPwMsg');
+
+      if (!np) {
+        msg.style.display = 'block';
+        msg.style.background = 'rgba(255,82,82,0.1)';
+        msg.style.color = 'var(--red)';
+        msg.style.border = '1px solid rgba(255,82,82,0.3)';
+        msg.innerText = '❌ กรุณากรอกรหัสผ่านใหม่';
+        return;
+      }
+      if (np.length < 4) {
+        msg.style.display = 'block';
+        msg.style.background = 'rgba(255,82,82,0.1)';
+        msg.style.color = 'var(--red)';
+        msg.style.border = '1px solid rgba(255,82,82,0.3)';
+        msg.innerText = '❌ รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร';
+        return;
+      }
+      if (np !== cp) {
+        msg.style.display = 'block';
+        msg.style.background = 'rgba(255,82,82,0.1)';
+        msg.style.color = 'var(--red)';
+        msg.style.border = '1px solid rgba(255,82,82,0.3)';
+        msg.innerText = '❌ รหัสผ่านใหม่และช่องยืนยันไม่ตรงกัน';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/global', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ new_password: np })
+        });
+        if (res.ok) {
+          playChime(true);
+          msg.style.display = 'block';
+          msg.style.background = 'rgba(0,230,118,0.1)';
+          msg.style.color = 'var(--green)';
+          msg.style.border = '1px solid rgba(0,230,118,0.3)';
+          msg.innerText = '✅ เปลี่ยนรหัสผ่าน Admin เรียบร้อยแล้ว! (จำรหัสผ่านใหม่นี้ไว้สำหรับการล็อกอินครั้งต่อไป)';
+          document.getElementById('cfgNewPassword').value = '';
+          document.getElementById('cfgConfirmPassword').value = '';
+        } else {
+          const err = await res.json();
+          alert('Error: ' + (err.detail || 'Change password failed'));
+        }
+      } catch (e) {
+        alert('Change password error: ' + e);
+      }
+    }
+
+    async function cleanDemoData() {
+      if (!confirm('ยืนยันล้างข้อมูลพอร์ตจำลอง/Demo เก่าที่ไม่ใช้งานทั้งหมดใช่หรือไม่?')) return;
+      try {
+        const res = await fetch('/api/admin/clean-demo', { method: 'POST' });
+        if (res.ok) {
+          playChime(true);
+          alert('✅ ล้างข้อมูลพอร์ตจำลองเรียบร้อยแล้ว!');
+          showAdminDashboard();
+          fetch('/api/snapshot').then(r => r.json()).then(d => { latestData = d; renderDashboard(d); });
+        }
+      } catch (e) {
+        alert('Clean failed: ' + e);
+      }
+    }
+
+    function copyAdminWebhook() {
+      const input = document.getElementById('adminWebhookUrl');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      alert('📋 คัดลอก Webhook URL เรียบร้อยแล้ว!');
+    }
+
     async function deleteAdminAccount(login) {
       if (!confirm(`คุณต้องการลบพอร์ต #${login} ออกจากแดชบอร์ดใช่หรือไม่?`)) return;
       try {
         const res = await fetch(`/api/admin/account/${login}`, { method: 'DELETE' });
         if (res.ok) {
+          playChime(true);
           alert(`ลบพอร์ต #${login} เรียบร้อยแล้ว`);
           showAdminDashboard();
           fetch('/api/snapshot').then(r => r.json()).then(d => { latestData = d; renderDashboard(d); });

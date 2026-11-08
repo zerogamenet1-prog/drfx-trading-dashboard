@@ -127,7 +127,7 @@ def init_db():
     defaults = {
         "site_title": "NEXUS QUANT PRO",
         "site_subtitle": "Institutional Algorithmic Trading Intelligence",
-        "admin_password": "admin1234",
+        "admin_password": "0854957432",
         "usd_thb_rate": "34.65",
         "announcement": "",
         "theme_accent": "#00f0ff",
@@ -641,9 +641,9 @@ async def admin_login(req: AdminLoginReq):
     c.execute("SELECT value FROM global_settings WHERE key = 'admin_password'")
     row = c.fetchone()
     conn.close()
-    real_pw = row["value"] if row else "admin1234"
+    real_pw = row["value"] if row else "0854957432"
     if req.password == real_pw:
-        return {"status": "ok", "token": "nexus_admin_authorized", "message": "Login successful"}
+        return {"status": "ok", "token": "nexus_admin_authorized_0854957432", "message": "Login successful"}
     raise HTTPException(status_code=401, detail="รหัสผ่าน Admin ไม่ถูกต้อง")
 
 @app.get("/api/admin/settings")
@@ -651,7 +651,8 @@ async def get_admin_settings():
     conn = get_db()
     c = conn.cursor()
     c.execute("SELECT key, value FROM global_settings")
-    globals_dict = {r["key"]: r["value"] for r in c.fetchall()}
+    # Strictly exclude admin_password so it is NEVER sent to the client
+    globals_dict = {r["key"]: r["value"] for r in c.fetchall() if r["key"] != "admin_password"}
     
     c.execute("SELECT * FROM accounts ORDER BY balance DESC")
     raw_accs = [dict(r) for r in c.fetchall()]
@@ -685,6 +686,20 @@ async def get_admin_settings():
         "accounts": merged
     }
 
+@app.post("/api/admin/clean-demo")
+async def clean_demo_accounts():
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("DELETE FROM accounts WHERE login IN ('8899201', '6644109', '3311902')")
+    c.execute("DELETE FROM account_settings WHERE login IN ('8899201', '6644109', '3311902')")
+    c.execute("DELETE FROM snapshots WHERE login IN ('8899201', '6644109', '3311902')")
+    c.execute("DELETE FROM daily_history WHERE login IN ('8899201', '6644109', '3311902')")
+    c.execute("DELETE FROM closed_deals WHERE login IN ('8899201', '6644109', '3311902')")
+    conn.commit()
+    conn.close()
+    asyncio.create_task(manager.broadcast(calculate_portfolio_snapshot()))
+    return {"status": "ok", "message": "Demo data cleaned successfully"}
+
 @app.post("/api/admin/account")
 async def update_account_setting(req: AccountSettingReq):
     conn = get_db()
@@ -713,7 +728,11 @@ async def update_global_setting(req: GlobalSettingReq):
     c = conn.cursor()
     updates = req.dict(exclude_none=True)
     if "new_password" in updates and updates["new_password"]:
-        updates["admin_password"] = updates.pop("new_password")
+        clean_pw = str(updates.pop("new_password")).strip()
+        if len(clean_pw) < 4:
+            conn.close()
+            raise HTTPException(status_code=400, detail="รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร")
+        updates["admin_password"] = clean_pw
     for k, v in updates.items():
         c.execute("""
         INSERT INTO global_settings (key, value) VALUES (?, ?)
