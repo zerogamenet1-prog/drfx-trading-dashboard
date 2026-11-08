@@ -869,22 +869,22 @@
 
   <!-- NAVIGATION TABS -->
   <div class="tabs-bar">
-    <button class="tab-btn active" onclick="switchTab('tabOverview')">
+    <button class="tab-btn active" data-tab="tabOverview" onclick="switchTab('tabOverview', this)">
       📊 Portfolio Overview
     </button>
-    <button class="tab-btn" onclick="switchTab('tabPositions')">
+    <button class="tab-btn" data-tab="tabPositions" onclick="switchTab('tabPositions', this)">
       ⚡ Live Order Book <span class="badge-count" id="tabPosBadge">0</span>
     </button>
-    <button class="tab-btn" onclick="switchTab('tabHistory')">
+    <button class="tab-btn" data-tab="tabHistory" onclick="switchTab('tabHistory', this)">
       📜 Trade History (Closed Deals)
     </button>
-    <button class="tab-btn" onclick="switchTab('tabAnalytics')">
+    <button class="tab-btn" data-tab="tabAnalytics" onclick="switchTab('tabAnalytics', this)">
       📈 Performance Analytics
     </button>
-    <button class="tab-btn" onclick="switchTab('tabCalendar')">
+    <button class="tab-btn" data-tab="tabCalendar" onclick="switchTab('tabCalendar', this)">
       📅 Profit Calendar Heatmap
     </button>
-    <button class="tab-btn" onclick="switchTab('tabWebhook')">
+    <button class="tab-btn" data-tab="tabWebhook" onclick="switchTab('tabWebhook', this)">
       ⚙️ Connection Guide
     </button>
   </div>
@@ -1365,7 +1365,7 @@
     let latestData = null;
     let isPrivacyMode = false;
     let isSoundEnabled = true;
-    let isAdminAuthed = false;
+    let isAdminAuthed = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('nexus_admin_authed') === 'true');
     let audioCtx = null;
 
     let mainGrowthChartInstance = null;
@@ -1430,13 +1430,17 @@
       if (latestData) renderDashboard(latestData);
     }
 
-    function switchTab(tabId) {
+    function switchTab(tabId, btnElem) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       
-      const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
-      if (targetBtn) targetBtn.classList.add('active');
-      
+      if (btnElem) {
+        btnElem.classList.add('active');
+      } else {
+        const found = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+        if (found) found.classList.add('active');
+      }
+
       const targetContent = document.getElementById(tabId);
       if (targetContent) targetContent.classList.add('active');
 
@@ -1861,7 +1865,6 @@
     // ─────────────────────────────────────────────────────────────
     // ADMIN BACKOFFICE LOGIC & SECURITY
     // ─────────────────────────────────────────────────────────────
-    let isAdminAuthed = sessionStorage.getItem('nexus_admin_authed') === 'true';
 
     function togglePasswordVisibility(inputId, iconId) {
       const input = document.getElementById(inputId);
@@ -2244,12 +2247,30 @@
       renderAccountsGrid(filtered);
     }
 
+    // Modal Backdrop click & Escape key listeners
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+      modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.classList.remove('active');
+        }
+      });
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+      }
+    });
+
     setInterval(() => {
       document.getElementById('footerClock').innerText = 'System Time: ' + new Date().toLocaleTimeString('th-TH');
     }, 1000);
 
     connectWS();
-    fetch('/api/snapshot').then(r => r.json()).then(d => { latestData = d; renderDashboard(d); });
+    fetch('/api/snapshot')
+      .then(r => r.json())
+      .then(d => { latestData = d; renderDashboard(d); })
+      .catch(err => console.error('Snapshot fetch error:', err));
   </script>
 </body>
 </html>
