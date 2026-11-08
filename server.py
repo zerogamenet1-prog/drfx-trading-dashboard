@@ -175,6 +175,7 @@ def calculate_portfolio_snapshot():
     rows = cursor.fetchall()
     
     accounts = []
+    all_positions = []
     total_balance = 0.0
     total_equity = 0.0
     total_floating = 0.0
@@ -213,6 +214,16 @@ def calculate_portfolio_snapshot():
         }
         accounts.append(acc_dict)
         
+        # Flatten all open positions across accounts
+        try:
+            raw_pos = json.loads(r["raw_positions"] or "[]")
+            for p in raw_pos:
+                p["account_name"] = acc_dict["name"]
+                p["account_login"] = r["login"]
+                all_positions.append(p)
+        except Exception:
+            pass
+
         total_balance += r["balance"]
         total_equity += r["equity"]
         total_floating += r["floating"]
@@ -222,6 +233,16 @@ def calculate_portfolio_snapshot():
         total_monthly += r["monthly_profit"]
         total_open_orders += r["open_orders_count"]
         total_lots += r["total_lots"]
+
+    # Gather aggregated daily history across all accounts for the calendar
+    cursor.execute("""
+    SELECT date, SUM(profit) as total_profit, SUM(trades_count) as total_trades 
+    FROM daily_history GROUP BY date ORDER BY date DESC LIMIT 45
+    """)
+    daily_calendar = [
+        {"date": r["date"], "profit": round(r["total_profit"] or 0, 2), "trades": r["total_trades"] or 0}
+        for r in cursor.fetchall()
+    ]
 
     conn.close()
 
@@ -240,7 +261,9 @@ def calculate_portfolio_snapshot():
             "total_open_orders": total_open_orders,
             "total_lots": round(total_lots, 2),
             "accounts_count": len(accounts),
-            "accounts": accounts
+            "accounts": accounts,
+            "all_positions": all_positions,
+            "daily_calendar": daily_calendar
         },
         "usdthb": {
             "rate": 34.65,
